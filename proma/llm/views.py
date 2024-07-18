@@ -3,7 +3,7 @@ from .serializers import PromptSerializer, PreviewSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
-from .utils import gemini_answer, gemini_preview
+from .utils import gemini_answer, gemini_preview, openai_preview
 
 # Create your views here.
 
@@ -20,10 +20,11 @@ def create_question(request):
     if serializer.is_valid():
         answer = gemini_answer(serializer.data['prompt'], serializer.data['question'])
         return Response({
-            "success": True,
-            "status": status.HTTP_200_OK,
-            "meesage":"요청에 성공하였습니다.",
-            "answer":answer
+            "responseDto" : {
+                "answer": answer
+            },
+            "error":None,
+            "success": True
         },status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -39,11 +40,21 @@ create_preview 예제 데이터
 def create_preview(request):
     serializer = PreviewSerializer(data=request.data)
     if serializer.is_valid():
+        if (len(serializer.data['sentence']) != len(serializer.data['word'])):
+            return Response({
+                "responseDto" : None,
+                "error" : {
+                    "code" : 6001,
+                    "message" : "단어와 블록의 개수가 일치하지 않습니다."
+                },
+                "success": False
+            })
         result = gemini_preview(serializer.data['sentence'], serializer.data['word'])
         return Response({
-            "success": True,
-            "status_code": status.HTTP_200_OK,
-            "message": "요청에 성공하였습니다.",
-            "result":result
+            "responseDto": {
+                "result": result
+            },
+            "error": None,
+            "success": True
         }, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
