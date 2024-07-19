@@ -2,16 +2,32 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain.chat_models import ChatOpenAI
+from langchain_community.document_loaders import OnlinePDFLoader
+from langchain.text_splitter import CharacterTextSplitter
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain.schema.runnable import RunnablePassthrough
 
-def gemini_answer(prompt, ques):
+def gemini_answer(prompt, ques, pdf):
     llm = ChatGoogleGenerativeAI(model="gemini-pro")
-    user_prompt = ChatPromptTemplate.from_template(prompt+"{input}")
-    chain = (
-        user_prompt
-        | llm
-        | StrOutputParser()
-    )
-    return (chain.invoke({"input":ques}))
+    retriever = gemini_pdf(pdf)
+
+    if retriever is None:
+        user_prompt = ChatPromptTemplate.from_template(prompt + "<Question>:{question}")
+        chain = (
+            user_prompt
+            | llm
+            | StrOutputParser()
+        )
+    else:
+        user_prompt = ChatPromptTemplate.from_template("{context}" + prompt + "<Question>:{question}")
+        chain = (
+            {"context": retriever, "question": RunnablePassthrough()}
+            | user_prompt
+            | llm
+            | StrOutputParser()
+        )
+    return (chain.invoke(ques))
 
 def gemini_preview(sen, word):
     llm = ChatGoogleGenerativeAI(model="gemini-pro")
@@ -45,3 +61,15 @@ def openai_preview(sen, word):
         result += chain.invoke({"input": word[i], "sen": sen[i]})
         result += " "
     return result
+
+def gemini_pdf(pdf):
+    if pdf is "":
+        return None
+    loader = OnlinePDFLoader(pdf)
+    document = loader.load()
+    text_splitter = CharacterTextSplitter(chunk_size=2048, chunk_overlap=50)
+    texts = text_splitter.split_documents(document)
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")  # gemini의 임베딩 모델
+    docsearch = Chroma.from_documents(texts, embeddings)
+    retriever = docsearch.as_retriever()
+    return retriever
