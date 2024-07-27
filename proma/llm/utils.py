@@ -7,9 +7,14 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain.schema.runnable import RunnablePassthrough
+from langchain_community.document_loaders import PyPDFLoader
 
 def gemini_answer(prompt, ques, pdf):
-    llm = ChatGoogleGenerativeAI(model="gemini-pro")
+    # llm = ChatGoogleGenerativeAI(model="gemini-pro")
+    llm = ChatOpenAI(temperature=2.0,  # 창의성 (0.0 ~ 2.0)
+                     max_tokens=2048,  # 최대 토큰수
+                     model_name='gpt-4o',  # 모델명
+                     )
     retriever = gemini_pdf(pdf)
 
     if retriever is None:
@@ -65,11 +70,24 @@ def openai_preview(sen, word):
 def gemini_pdf(pdf):
     if pdf is "":
         return None
-    loader = OnlinePDFLoader(pdf)
+    # loader = OnlinePDFLoader(pdf)
+    loader = PyPDFLoader(pdf)
     document = loader.load()
-    text_splitter = CharacterTextSplitter(chunk_size=2048, chunk_overlap=50)
+    text_splitter = CharacterTextSplitter(chunk_size=256, chunk_overlap=50)
     texts = text_splitter.split_documents(document)
     embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")  # gemini의 임베딩 모델
     docsearch = Chroma.from_documents(texts, embeddings)
     retriever = docsearch.as_retriever()
     return retriever
+
+def dgu_chatbot(question):
+    llm = ChatGoogleGenerativeAI(model="gemini-pro")
+    retriever = gemini_pdf("https://secure-project-dev-image.s3.ap-northeast-2.amazonaws.com/secure-project-using-image/computer.pdf")
+    user_prompt = ChatPromptTemplate.from_template("{context} 너는 동국대학교 컴퓨터공학과 챗봇이야. 이 pdf에 근거해서 친절하게 대답해줘. <Question>:{question}")
+    chain = (
+            {"context": retriever, "question": RunnablePassthrough()}
+            | user_prompt
+            | llm
+            | StrOutputParser()
+    )
+    return (chain.invoke(question))
