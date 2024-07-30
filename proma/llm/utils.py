@@ -2,16 +2,20 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain.chat_models import ChatOpenAI
-from langchain_community.document_loaders import OnlinePDFLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import Chroma
-from langchain.schema.runnable import RunnablePassthrough
+from langchain_core.runnables import RunnablePassthrough
 from langchain_community.document_loaders import PyPDFLoader
+from langchain_core.messages import HumanMessage, SystemMessage
+import base64
+import pytesseract
+
+pytesseract.pytesseract.tesseract_cmd = r'C:\Users\su\AppData\Local\tesseract.exe'
 
 def gemini_answer(prompt, ques, pdf):
     # llm = ChatGoogleGenerativeAI(model="gemini-pro")
-    llm = ChatOpenAI(temperature=2.0,  # 창의성 (0.0 ~ 2.0)
+    llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
                      max_tokens=2048,  # 최대 토큰수
                      model_name='gpt-4o',  # 모델명
                      )
@@ -80,14 +84,37 @@ def gemini_pdf(pdf):
     retriever = docsearch.as_retriever()
     return retriever
 
-def dgu_chatbot(question):
-    llm = ChatGoogleGenerativeAI(model="gemini-pro")
-    retriever = gemini_pdf("https://secure-project-dev-image.s3.ap-northeast-2.amazonaws.com/secure-project-using-image/computer.pdf")
-    user_prompt = ChatPromptTemplate.from_template("{context} 너는 동국대학교 컴퓨터공학과 챗봇이야. 이 pdf에 근거해서 친절하게 대답해줘. <Question>:{question}")
-    chain = (
-            {"context": retriever, "question": RunnablePassthrough()}
-            | user_prompt
-            | llm
-            | StrOutputParser()
+def encode_image(image_path):
+    with open(image_path, "rb") as image_file:
+        img = base64.b64encode(image_file.read()).decode("utf-8")
+
+    return f"data:image/jpeg;base64,{img}"
+
+def chat_img(prompt, ques, img):
+    llm = ChatOpenAI(temperature=0,  # 창의성 (0.0 ~ 2.0)
+                     max_tokens=2048,  # 최대 토큰수
+                     model_name='gpt-4o',  # 모델명
+                     )
+    if img:
+        image_url = img
+    else:
+        base64_image = encode_image(img)
+        image_url = f"{base64_image}"
+    system_message = SystemMessage(
+        content=prompt
     )
-    return (chain.invoke(question))
+
+    vision_message = HumanMessage(
+        content=[
+            {"type": "text", "text": ques},
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": image_url,
+                    "detail": "auto",
+                },
+            },
+        ]
+    )
+    output = llm.invoke([system_message, vision_message])
+    return output.content

@@ -1,5 +1,5 @@
 from django.db import models
-from users.models import user_tb
+from users.models import user_tb, chatroom_tb
 
 # Create your models here.
 class prompt_type_tb(models.Model):
@@ -34,8 +34,8 @@ class like_tb(models.Model):
 class block_tb(models.Model):
     id = models.AutoField(primary_key=True)
     user_id = models.ForeignKey(user_tb, on_delete=models.CASCADE)
-    type_id = models.ForeignKey(prompt_type_tb, on_delete=models.CASCADE)
-    block_title = models.CharField(max_length=256)
+    method_id = models.ForeignKey(prompt_type_tb, on_delete=models.CASCADE)
+    block_value = models.CharField(max_length=256)
     block_description = models.CharField(max_length=256)
     block_category = models.BigIntegerField()
 
@@ -43,3 +43,12 @@ class prompt_block_tb(models.Model):
     id = models.AutoField(primary_key=True)
     prompt_id = models.ForeignKey(prompt_tb, on_delete=models.CASCADE)
     block_id = models.ForeignKey(block_tb, on_delete=models.CASCADE)
+
+class message_tb(models.Model):
+    id = models.AutoField(primary_key=True)
+    chatroom_id = models.ForeignKey(chatroom_tb, on_delete=models.CASCADE)
+    prompt_id = models.ForeignKey(prompt_tb, on_delete=models.CASCADE)
+    message_question = models.CharField(max_length=256)
+    message_file = models.CharField(max_length=256)
+    message_create_at = models.DateTimeField(auto_now_add=True)
+    message_answer = models.CharField(max_length=256)
