@@ -13,13 +13,13 @@ import pytesseract
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Users\su\AppData\Local\tesseract.exe'
 
-def gemini_answer(prompt, ques, pdf):
-    # llm = ChatGoogleGenerativeAI(model="gemini-pro")
-    llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
-                     max_tokens=2048,  # 최대 토큰수
-                     model_name='gpt-4o',  # 모델명
-                     )
-    retriever = gemini_pdf(pdf)
+def gemini_answer(prompt, messageQuestion, messageFile):
+    llm = ChatGoogleGenerativeAI(model="gemini-pro")
+    # llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
+    #                  max_tokens=2048,  # 최대 토큰수
+    #                  model_name='gpt-4o',  # 모델명
+    #                  )
+    retriever = gemini_pdf(messageFile)
 
     if retriever is None:
         user_prompt = ChatPromptTemplate.from_template(prompt + "<Question>:{question}")
@@ -36,7 +36,7 @@ def gemini_answer(prompt, ques, pdf):
             | llm
             | StrOutputParser()
         )
-    return (chain.invoke(ques))
+    return (chain.invoke(messageQuestion))
 
 def gemini_preview(sen, word):
     llm = ChatGoogleGenerativeAI(model="gemini-pro")
@@ -53,28 +53,9 @@ def gemini_preview(sen, word):
         result += " "
     return result
 
-def openai_preview(sen, word):
-    llm = ChatOpenAI(temperature=0,  # 창의성 (0.0 ~ 2.0)
-                     max_tokens=2048,  # 최대 토큰수
-                     model_name='gpt-4o',  # 모델명
-                     )
-    result = ""
-    for i in range(len(word)):
-        prompt_2 = ChatPromptTemplate.from_template('"{input}" 이 명사를 "{sen}"이 문장의 __부분에 맞춤법을 맞춰서 넣어줘. 명사와 종결 어미는 수정하지마. 결과 문자열에서 프롬프트 내용은 빼고 결과 문장만 깔끔하게 보여줘. 이 문장들을 너가 잘 이해할 수 있게 프롬프트처럼 최종 수정된 문장만 보여줘.')
-        chain = (
-                prompt_2
-                | llm
-                | StrOutputParser()
-        )
-        # result.append(chain.invoke({"input": word[i], "sen": sen[i]}))
-        result += chain.invoke({"input": word[i], "sen": sen[i]})
-        result += " "
-    return result
-
 def gemini_pdf(pdf):
     if pdf is "":
         return None
-    # loader = OnlinePDFLoader(pdf)
     loader = PyPDFLoader(pdf)
     document = loader.load()
     text_splitter = CharacterTextSplitter(chunk_size=256, chunk_overlap=50)
@@ -90,15 +71,16 @@ def encode_image(image_path):
 
     return f"data:image/jpeg;base64,{img}"
 
-def chat_img(prompt, ques, img):
-    llm = ChatOpenAI(temperature=0,  # 창의성 (0.0 ~ 2.0)
-                     max_tokens=2048,  # 최대 토큰수
-                     model_name='gpt-4o',  # 모델명
-                     )
-    if img:
-        image_url = img
+def chat_img(prompt, messageQuestion, messageFile):
+    llm = ChatGoogleGenerativeAI(model="gemini-pro")
+    # llm = ChatOpenAI(temperature=0,  # 창의성 (0.0 ~ 2.0)
+    #                  max_tokens=2048,  # 최대 토큰수
+    #                  model_name='gpt-4o',  # 모델명
+    #                  )
+    if messageFile:
+        image_url = messageFile
     else:
-        base64_image = encode_image(img)
+        base64_image = encode_image(messageFile)
         image_url = f"{base64_image}"
     system_message = SystemMessage(
         content=prompt
@@ -106,7 +88,7 @@ def chat_img(prompt, ques, img):
 
     vision_message = HumanMessage(
         content=[
-            {"type": "text", "text": ques},
+            {"type": "text", "text": messageQuestion},
             {
                 "type": "image_url",
                 "image_url": {

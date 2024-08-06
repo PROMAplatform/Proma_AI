@@ -10,13 +10,13 @@ def create_question(request):
     serializer = PromptSerializer(data=request.data)
     if serializer.is_valid():
         prompt = serializer.data['prompt']
-        question = serializer.data['question']
-        url = serializer.data['url']
-        file = serializer.data['file']
-        if file == "image":
-            answer = chat_img(prompt, question, url)
+        messageQuestion = serializer.data['messageQuestion']
+        messageFile = serializer.data['messageFile']
+        fileType = serializer.data['fileType']
+        if fileType == "image":
+            answer = chat_img(prompt, messageQuestion, messageFile)
         else:
-            answer = gemini_answer(prompt, question, url)
+            answer = gemini_answer(prompt, messageQuestion, messageFile)
         return Response({
             "responseDto" : {
                 "answer": answer
