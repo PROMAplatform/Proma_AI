@@ -23,14 +23,14 @@ def gemini_answer(prompt, messageQuestion, messageFile):
     retriever = gemini_pdf(messageFile)
 
     if retriever is None:
-        user_prompt = ChatPromptTemplate.from_template(prompt + "<Question>:{question}")
+        user_prompt = ChatPromptTemplate.from_template(prompt + "{question}")
         chain = (
             user_prompt
             | llm
             | StrOutputParser()
         )
     else:
-        user_prompt = ChatPromptTemplate.from_template("{context}" + prompt + "<Question>:{question}")
+        user_prompt = ChatPromptTemplate.from_template("{context}" + prompt + "{question}")
         chain = (
             {"context": retriever, "question": RunnablePassthrough()}
             | user_prompt
