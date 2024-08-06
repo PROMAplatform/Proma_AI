@@ -4,12 +4,14 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
 from .utils import gemini_answer, gemini_preview, chat_img
+from .models import prompt_tb
 
 @api_view(['POST'])
 def create_question(request):
     serializer = PromptSerializer(data=request.data)
     if serializer.is_valid():
-        prompt = serializer.data['prompt']
+        promptId = serializer.data['promptId']
+        prompt = prompt_tb.objects.get(pk=promptId).prompt_preview
         messageQuestion = serializer.data['messageQuestion']
         messageFile = serializer.data['messageFile']
         fileType = serializer.data['fileType']
@@ -19,7 +21,7 @@ def create_question(request):
             answer = gemini_answer(prompt, messageQuestion, messageFile)
         return Response({
             "responseDto" : {
-                "answer": answer
+                "messageAnswer": answer
             },
             "error":None,
             "success": True
