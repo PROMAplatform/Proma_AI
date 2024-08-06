@@ -11,21 +11,27 @@ def create_question(request):
     serializer = PromptSerializer(data=request.data)
     if serializer.is_valid():
         promptId = serializer.data['promptId']
-        prompt = prompt_tb.objects.get(pk=promptId).prompt_preview
-        messageQuestion = serializer.data['messageQuestion']
-        messageFile = serializer.data['messageFile']
-        fileType = serializer.data['fileType']
-        if fileType == "image":
-            answer = chat_img(prompt, messageQuestion, messageFile)
-        else:
-            answer = gemini_answer(prompt, messageQuestion, messageFile)
-        return Response({
-            "responseDto" : {
-                "messageAnswer": answer
-            },
-            "error":None,
-            "success": True
-        },status=status.HTTP_200_OK)
+        try:
+            prompt = prompt_tb.objects.get(pk=promptId).prompt_preview
+            messageQuestion = serializer.data['messageQuestion']
+            messageFile = serializer.data['messageFile']
+            fileType = serializer.data['fileType']
+            if fileType == "image":
+                answer = chat_img(prompt, messageQuestion, messageFile)
+            else:
+                answer = gemini_answer(prompt, messageQuestion, messageFile)
+            return Response({
+                "responseDto": {
+                    "messageAnswer": answer
+                },
+                "error":None,
+                "success": True
+            },status=status.HTTP_200_OK)
+        except prompt_tb.DoesNotExist:
+            return Response({
+                "error":4043,
+                "success": False
+            })
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
