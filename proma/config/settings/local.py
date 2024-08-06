@@ -6,4 +6,4 @@ from .base import *
 # set DJANGO_SETTINGS_MODULE=config.settings.local
 # python manage.py runserver
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
