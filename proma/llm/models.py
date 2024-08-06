@@ -10,8 +10,8 @@ class prompt_type_tb(models.Model):
 
 class prompt_tb(models.Model):
     id = models.AutoField(primary_key=True)
-    user_id = models.ForeignKey(user_tb, on_delete=models.CASCADE)
-    prompt_method_id = models.ForeignKey(prompt_type_tb, on_delete=models.CASCADE)
+    user = models.ForeignKey(user_tb, on_delete=models.CASCADE)
+    prompt_method = models.ForeignKey(prompt_type_tb, on_delete=models.CASCADE)
     prompt_title = models.CharField(max_length=256)
     prompt_description = models.CharField(max_length=256)
     prompt_preview = models.CharField(max_length=256)
@@ -24,7 +24,7 @@ class prompt_tb(models.Model):
 
 class post_tb(models.Model):
     id = models.AutoField(primary_key=True)
-    prompt_id = models.ForeignKey(prompt_tb, on_delete=models.CASCADE)
+    prompt = models.ForeignKey(prompt_tb, on_delete=models.CASCADE)
     post_title = models.CharField(max_length=256)
     post_description = models.CharField(max_length=256)
     create_at = models.DateTimeField(auto_now_add=True)
@@ -33,16 +33,16 @@ class post_tb(models.Model):
 
 class like_tb(models.Model):
     id = models.AutoField(primary_key=True)
-    post_id = models.ForeignKey(post_tb, on_delete=models.CASCADE)
-    user_id = models.ForeignKey(user_tb, on_delete=models.CASCADE)
+    post = models.ForeignKey(post_tb, on_delete=models.CASCADE)
+    user = models.ForeignKey(user_tb, on_delete=models.CASCADE)
     like_at = models.DateTimeField(auto_now_add=True)
     class Meta:
         db_table = 'like_tb'
 
 class block_tb(models.Model):
     id = models.AutoField(primary_key=True)
-    user_id = models.ForeignKey(user_tb, on_delete=models.CASCADE)
-    prompt_method_id = models.ForeignKey(prompt_type_tb, on_delete=models.CASCADE)
+    user = models.ForeignKey(user_tb, on_delete=models.CASCADE)
+    prompt_method = models.ForeignKey(prompt_type_tb, on_delete=models.CASCADE)
     block_value = models.CharField(max_length=256)
     block_description = models.CharField(max_length=256)
     block_category = models.BigIntegerField()
@@ -51,15 +51,15 @@ class block_tb(models.Model):
 
 class prompt_block_tb(models.Model):
     id = models.AutoField(primary_key=True)
-    prompt_id = models.ForeignKey(prompt_tb, on_delete=models.CASCADE)
-    block_id = models.ForeignKey(block_tb, on_delete=models.CASCADE)
+    prompt = models.ForeignKey(prompt_tb, on_delete=models.CASCADE)
+    block = models.ForeignKey(block_tb, on_delete=models.CASCADE)
     class Meta:
         db_table = 'prompt_block_tb'
 
 class message_tb(models.Model):
     id = models.AutoField(primary_key=True)
-    chatroom_id = models.ForeignKey(chatroom_tb, on_delete=models.CASCADE)
-    prompt_id = models.ForeignKey(prompt_tb, on_delete=models.CASCADE)
+    chatroom = models.ForeignKey(chatroom_tb, on_delete=models.CASCADE)
+    prompt = models.ForeignKey(prompt_tb, on_delete=models.CASCADE)
     message_question = models.CharField(max_length=256)
     message_file = models.CharField(max_length=256)
     message_create_at = models.DateTimeField(auto_now_add=True)
