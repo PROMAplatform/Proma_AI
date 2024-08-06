@@ -12,7 +12,10 @@ def create_question(request):
     if serializer.is_valid():
         promptId = serializer.data['promptId']
         try:
-            prompt = prompt_tb.objects.get(pk=promptId).prompt_preview
+            if(promptId is not None):
+                prompt = prompt_tb.objects.get(pk=promptId).prompt_preview
+            else:
+                prompt = ""
             messageQuestion = serializer.data['messageQuestion']
             messageFile = serializer.data['messageFile']
             fileType = serializer.data['fileType']
