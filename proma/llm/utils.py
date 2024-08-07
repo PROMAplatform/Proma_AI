@@ -22,15 +22,19 @@ def gemini_answer(prompt, messageQuestion, messageFile, history):
     #                  model_name='gpt-4o',  # 모델명
     #                  )
     retriever = gemini_pdf(messageFile)
+    if history == "":
+        tmp_history = ""
+    else:
+        tmp_history = history_template + history
     if retriever is None:
-        user_prompt = ChatPromptTemplate.from_template(history_template + history + prompt + "{question}")
+        user_prompt = ChatPromptTemplate.from_template(tmp_history + prompt + "{question}")
         chain = (
             user_prompt
             | llm
             | StrOutputParser()
         )
     else:
-        user_prompt = ChatPromptTemplate.from_template(history_template + history + "{context}" + prompt + "{question}")
+        user_prompt = ChatPromptTemplate.from_template(tmp_history + "{context}" + prompt + "{question}")
         chain = (
             {"context": retriever, "question": RunnablePassthrough()}
             | user_prompt
@@ -86,10 +90,13 @@ def chat_img(prompt, messageQuestion, messageFile, history):
     system_message = SystemMessage(
         content=prompt
     )
-
+    if history == "":
+        tmp_history = ""
+    else:
+        tmp_history = history_template + history
     vision_message = HumanMessage(
         content=[
-            {"type": "text", "text": history_template + history + messageQuestion},
+            {"type": "text", "text": tmp_history + messageQuestion},
             {
                 "type": "image_url",
                 "image_url": {
