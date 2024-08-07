@@ -1,10 +1,11 @@
 from django.shortcuts import render
-from .serializers import PromptSerializer, PreviewSerializer
+from .serializers import PromptSerializer, PreviewSerializer, MessageSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
-from .utils import gemini_answer, gemini_preview, chat_img
+from .utils import gemini_answer, gemini_preview, chat_img, get_history
 from .models import prompt_tb
+from datetime import datetime
 
 @api_view(['POST'])
 def create_question(request):
@@ -19,10 +20,22 @@ def create_question(request):
             messageQuestion = serializer.data['messageQuestion']
             messageFile = serializer.data['messageFile']
             fileType = serializer.data['fileType']
+            chatroomId = serializer.data['chatroomId']
+            history = get_history(chatroomId)
             if fileType == "image":
-                answer = chat_img(prompt, messageQuestion, messageFile)
+                answer = chat_img(prompt, messageQuestion, messageFile, history)
             else:
-                answer = gemini_answer(prompt, messageQuestion, messageFile)
+                answer = gemini_answer(prompt, messageQuestion, messageFile, history)
+            data = {"prompt":promptId,
+                    "message_answer": answer,
+                    "message_file":messageFile,
+                    "message_question":messageQuestion,
+                    "chatroom":chatroomId,
+                    # "message_create_at":datetime.now(),
+                    }
+            message_serializer = MessageSerializer(data=data)
+            message_serializer.is_valid(raise_exception=True)
+            message_serializer.save()
             return Response({
                 "responseDto": {
                     "messageAnswer": answer

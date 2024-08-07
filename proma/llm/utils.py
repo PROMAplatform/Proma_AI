@@ -10,27 +10,27 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.messages import HumanMessage, SystemMessage
 import base64
 import pytesseract
-from typing_extensions import runtime_checkable
+from .models import message_tb
+from .template import history_template
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Users\su\AppData\Local\tesseract.exe'
 
-def gemini_answer(prompt, messageQuestion, messageFile):
+def gemini_answer(prompt, messageQuestion, messageFile, history):
     llm = ChatGoogleGenerativeAI(model="gemini-pro")
     # llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
     #                  max_tokens=2048,  # 최대 토큰수
     #                  model_name='gpt-4o',  # 모델명
     #                  )
     retriever = gemini_pdf(messageFile)
-
     if retriever is None:
-        user_prompt = ChatPromptTemplate.from_template(prompt + "{question}")
+        user_prompt = ChatPromptTemplate.from_template(history_template + history + prompt + "{question}")
         chain = (
             user_prompt
             | llm
             | StrOutputParser()
         )
     else:
-        user_prompt = ChatPromptTemplate.from_template("{context}" + prompt + "{question}")
+        user_prompt = ChatPromptTemplate.from_template(history_template + history + "{context}" + prompt + "{question}")
         chain = (
             {"context": retriever, "question": RunnablePassthrough()}
             | user_prompt
@@ -72,7 +72,7 @@ def encode_image(image_path):
 
     return f"data:image/jpeg;base64,{img}"
 
-def chat_img(prompt, messageQuestion, messageFile):
+def chat_img(prompt, messageQuestion, messageFile, history):
     llm = ChatGoogleGenerativeAI(model="gemini-pro")
     # llm = ChatOpenAI(temperature=0,  # 창의성 (0.0 ~ 2.0)
     #                  max_tokens=2048,  # 최대 토큰수
@@ -89,7 +89,7 @@ def chat_img(prompt, messageQuestion, messageFile):
 
     vision_message = HumanMessage(
         content=[
-            {"type": "text", "text": messageQuestion},
+            {"type": "text", "text": history_template + history + messageQuestion},
             {
                 "type": "image_url",
                 "image_url": {
@@ -101,3 +101,13 @@ def chat_img(prompt, messageQuestion, messageFile):
     )
     output = llm.invoke([system_message, vision_message])
     return output.content
+
+def get_history(room):
+    chat_data = message_tb.objects.filter(chatroom_id=room).values()
+    history = ""
+    if (len(chat_data) == 0):
+        return ""
+    for i in chat_data:
+        history += '[human]:' + i['message_question'] + ' / [system]:' + i['message_answer'] + ' / '
+
+    return history
