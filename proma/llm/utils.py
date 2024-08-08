@@ -12,6 +12,7 @@ import base64
 import pytesseract
 from .models import message_tb
 from .template import history_template
+from langchain_teddynote.models import MultiModal
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Users\su\AppData\Local\tesseract.exe'
 
@@ -108,6 +109,22 @@ def chat_img(prompt, messageQuestion, messageFile, history):
     )
     output = llm.invoke([system_message, vision_message])
     return output.content
+
+
+def gemini_img(prompt, messageQuestion, messageFile, history):
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
+    if history == "":
+        tmp_history = ""
+    else:
+        tmp_history = history_template + history
+    multimodal_gemini = MultiModal(
+        llm, system_prompt=tmp_history+prompt, user_prompt=messageQuestion
+    )
+    answer = multimodal_gemini.stream(messageFile)
+    ret = ''
+    for i in answer:
+        ret += i.content
+    return ret
 
 def get_history(room):
     chat_data = message_tb.objects.filter(chatroom_id=room).values()
