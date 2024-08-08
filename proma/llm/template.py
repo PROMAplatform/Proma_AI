@@ -15,3 +15,7 @@ This is a previous conversation between you and the user.
 Answer by referring to this conversation.
 Never give the same answer as you gave before.
 """
+
+implicit_template = """
+Don't answer longer than 1024 characters.
+"""

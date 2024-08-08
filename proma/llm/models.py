@@ -63,6 +63,6 @@ class message_tb(models.Model):
     message_question = models.CharField(max_length=256)
     message_file = models.CharField(max_length=256, blank=True)
     message_create_at = models.DateField(auto_now_add=True)
-    message_answer = models.CharField(max_length=256)
+    message_answer = models.CharField(max_length=1024)
     class Meta:
         db_table = 'message_tb'

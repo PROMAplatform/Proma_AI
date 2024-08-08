@@ -11,37 +11,43 @@ from langchain_core.messages import HumanMessage, SystemMessage
 import base64
 import pytesseract
 from .models import message_tb
-from .template import history_template
+from .template import history_template, implicit_template
 from langchain_teddynote.models import MultiModal
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Users\su\AppData\Local\tesseract.exe'
 
-def gemini_answer(prompt, messageQuestion, messageFile, history):
+def gemini_answer(prompt, messageQuestion, history):
     llm = ChatGoogleGenerativeAI(model="gemini-pro")
     # llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
     #                  max_tokens=2048,  # 최대 토큰수
     #                  model_name='gpt-4o',  # 모델명
     #                  )
-    retriever = gemini_pdf(messageFile)
     if history == "":
         tmp_history = ""
     else:
         tmp_history = history_template + history
-    if retriever is None:
-        user_prompt = ChatPromptTemplate.from_template(tmp_history + prompt + "{question}")
-        chain = (
-            user_prompt
-            | llm
-            | StrOutputParser()
-        )
+    user_prompt = ChatPromptTemplate.from_template(implicit_template + tmp_history + prompt + "{question}")
+    chain = (
+        user_prompt
+        | llm
+        | StrOutputParser()
+    )
+    return (chain.invoke(messageQuestion))
+
+def gemini_pdf(prompt, messageQuestion, messageFile, history):
+    llm = ChatGoogleGenerativeAI(model="gemini-pro")
+    retriever = pdf_loader(messageFile)
+    if history == "":
+        tmp_history = ""
     else:
-        user_prompt = ChatPromptTemplate.from_template(tmp_history + "{context}" + prompt + "{question}")
-        chain = (
+        tmp_history = history_template + history
+    user_prompt = ChatPromptTemplate.from_template(implicit_template + tmp_history + "{context}" + prompt + "{question}")
+    chain = (
             {"context": retriever, "question": RunnablePassthrough()}
             | user_prompt
             | llm
             | StrOutputParser()
-        )
+    )
     return (chain.invoke(messageQuestion))
 
 def gemini_preview(sen, word):
@@ -59,7 +65,7 @@ def gemini_preview(sen, word):
         result += " "
     return result
 
-def gemini_pdf(pdf):
+def pdf_loader(pdf):
     if pdf is "":
         return None
     loader = PyPDFLoader(pdf)
@@ -97,7 +103,7 @@ def chat_img(prompt, messageQuestion, messageFile, history):
         tmp_history = history_template + history
     vision_message = HumanMessage(
         content=[
-            {"type": "text", "text": tmp_history + messageQuestion},
+            {"type": "text", "text": implicit_template + tmp_history + messageQuestion},
             {
                 "type": "image_url",
                 "image_url": {
@@ -118,7 +124,7 @@ def gemini_img(prompt, messageQuestion, messageFile, history):
     else:
         tmp_history = history_template + history
     multimodal_gemini = MultiModal(
-        llm, system_prompt=tmp_history+prompt, user_prompt=messageQuestion
+        llm, system_prompt=implicit_template + tmp_history + prompt, user_prompt=messageQuestion
     )
     answer = multimodal_gemini.stream(messageFile)
     ret = ''

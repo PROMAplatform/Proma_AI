@@ -3,7 +3,7 @@ from .serializers import PromptSerializer, PreviewSerializer, MessageSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
-from .utils import gemini_answer, gemini_preview, chat_img, get_history, gemini_img
+from .utils import gemini_answer, gemini_preview, chat_img, get_history, gemini_img, gemini_pdf
 from .models import prompt_tb
 from datetime import datetime
 
@@ -24,8 +24,10 @@ def create_question(request):
             history = get_history(chatroomId)
             if fileType == "image":
                 answer = gemini_img(prompt, messageQuestion, messageFile, history) #chat_img(prompt, messageQuestion, messageFile, history)
+            elif fileType == "pdf":
+                answer = gemini_pdf(prompt, messageQuestion, messageFile, history)
             else:
-                answer = gemini_answer(prompt, messageQuestion, messageFile, history)
+                answer = gemini_answer(prompt, messageQuestion, history)
             data = {"prompt":promptId,
                     "message_answer": answer,
                     "message_file":messageFile,
