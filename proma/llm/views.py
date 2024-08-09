@@ -5,7 +5,6 @@ from rest_framework.decorators import api_view
 from rest_framework import status
 from .utils import gemini_answer, gemini_preview, chat_img, get_history, gemini_img, gemini_pdf
 from .models import prompt_tb
-from datetime import datetime
 
 @api_view(['POST'])
 def create_question(request):
@@ -13,7 +12,7 @@ def create_question(request):
     if serializer.is_valid():
         promptId = serializer.data['promptId']
         try:
-            if(promptId is not None):
+            if promptId is not None:
                 prompt = prompt_tb.objects.get(pk=promptId).prompt_preview
             else:
                 prompt = ""

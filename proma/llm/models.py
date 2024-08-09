@@ -59,7 +59,7 @@ class prompt_block_tb(models.Model):
 class message_tb(models.Model):
     id = models.AutoField(primary_key=True)
     chatroom = models.ForeignKey(chatroom_tb, on_delete=models.CASCADE)
-    prompt = models.ForeignKey(prompt_tb, on_delete=models.CASCADE)
+    prompt = models.ForeignKey(prompt_tb, on_delete=models.CASCADE, null=True)
     message_question = models.CharField(max_length=256)
     message_file = models.CharField(max_length=256, blank=True)
     message_create_at = models.DateField(auto_now_add=True)
