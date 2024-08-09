@@ -26,7 +26,7 @@ def gemini_answer(prompt, messageQuestion, history):
         tmp_history = ""
     else:
         tmp_history = history_template + history
-    user_prompt = ChatPromptTemplate.from_template(implicit_template + tmp_history + prompt + "{question}")
+    user_prompt = ChatPromptTemplate.from_template(implicit_template + tmp_history + "<prompt>:[" + prompt + "] <question>: {question}")
     chain = (
         user_prompt
         | llm
@@ -41,7 +41,7 @@ def gemini_pdf(prompt, messageQuestion, messageFile, history):
         tmp_history = ""
     else:
         tmp_history = history_template + history
-    user_prompt = ChatPromptTemplate.from_template(implicit_template + tmp_history + "{context}" + prompt + "{question}")
+    user_prompt = ChatPromptTemplate.from_template(implicit_template + tmp_history + "{context}" + "<prompt>:[" + prompt + "] <question>:  + {question}")
     chain = (
             {"context": retriever, "question": RunnablePassthrough()}
             | user_prompt
@@ -103,7 +103,7 @@ def chat_img(prompt, messageQuestion, messageFile, history):
         tmp_history = history_template + history
     vision_message = HumanMessage(
         content=[
-            {"type": "text", "text": implicit_template + tmp_history + messageQuestion},
+            {"type": "text", "text": implicit_template + tmp_history + "<prompt>:[" + prompt + "] <question>: "+messageQuestion},
             {
                 "type": "image_url",
                 "image_url": {
