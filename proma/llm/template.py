@@ -18,4 +18,5 @@ Never give the same answer as you gave before.
 
 implicit_template = """
 Don't answer longer than 1024 characters.
+Please answer as if you were the speaker and the user was the listener.
 """
