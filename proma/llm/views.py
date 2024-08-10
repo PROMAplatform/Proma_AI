@@ -7,7 +7,6 @@ from .utils import gemini_answer, gemini_preview, chat_img, get_history, gemini_
 from .models import prompt_tb
 from users.models import user_tb, chatroom_tb
 import base64
-import json
 
 @api_view(['POST'])
 def create_question(request):
