@@ -4,9 +4,13 @@ class user_tb(models.Model):
     id = models.AutoField(primary_key=True)
     user_login_id = models.CharField(max_length=256)
     user_name = models.CharField(max_length=256)
-    user_login_method = models.SmallIntegerField()
+    user_login_method = models.CharField(max_length=256)
     create_at = models.DateTimeField(auto_now_add=True)
     user_ongoing = models.BooleanField(default=False)
+    is_login = models.BooleanField(default=False)
+    refresh_token = models.CharField(max_length=256)
+    role = models.CharField(max_length=256)
+    social_id = models.CharField(max_length=256)
     class Meta:
         db_table = 'user_tb'
 

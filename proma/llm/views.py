@@ -3,30 +3,60 @@ from .serializers import PromptSerializer, PreviewSerializer, MessageSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
-from .utils import gemini_answer, gemini_preview, chat_img, get_history, gemini_img, gemini_pdf
+from .utils import gemini_answer, gemini_preview, chat_img, get_history, gemini_img, gemini_pdf, find_id
 from .models import prompt_tb
+from users.models import user_tb, chatroom_tb
+import base64
+import json
 
 @api_view(['POST'])
 def create_question(request):
     serializer = PromptSerializer(data=request.data)
+    token = request.headers.get('Authorization')
+    if token is None:
+        return Response({
+            "error": 4046,
+            "success": False
+        })
     if serializer.is_valid():
         promptId = serializer.data['promptId']
+        token = token + '=' * (4 - len(token) % 4)
+        payload = base64.b64decode(token)
+        payload = str(payload)
+        token_id = find_id(payload)
+        user = user_tb.objects.get(social_id=token_id)
         try:
             if promptId is not None:
-                prompt = prompt_tb.objects.get(pk=promptId).prompt_preview
+                prompt = prompt_tb.objects.get(pk=promptId)
+                if prompt.user != user:
+                    return Response({
+                        "error": 4039,
+                        "success": False
+                    })
             else:
                 prompt = ""
             messageQuestion = serializer.data['messageQuestion']
             messageFile = serializer.data['messageFile']
             fileType = serializer.data['fileType']
             chatroomId = serializer.data['chatroomId']
+            chatroom = chatroom_tb.objects.get(pk=chatroomId)
+            if chatroom.user != user:
+                return Response({
+                    "error": 40310,
+                    "success": False
+                })
             history = get_history(chatroomId)
+            if history == "error":
+                return Response({
+                    "error": 4044,
+                    "success": False
+                })
             if fileType == "image":
-                answer = gemini_img(prompt, messageQuestion, messageFile, history) #chat_img(prompt, messageQuestion, messageFile, history)
+                answer = gemini_img(prompt.prompt_preview, messageQuestion, messageFile, history)
             elif fileType == "pdf":
-                answer = gemini_pdf(prompt, messageQuestion, messageFile, history)
+                answer = gemini_pdf(prompt.prompt_preview, messageQuestion, messageFile, history)
             else:
-                answer = gemini_answer(prompt, messageQuestion, history)
+                answer = gemini_answer(prompt.prompt_preview, messageQuestion, history)
             data = {"prompt":promptId,
                     "message_answer": answer,
                     "message_file":messageFile,
@@ -38,7 +68,8 @@ def create_question(request):
             message_serializer.save()
             return Response({
                 "responseDto": {
-                    "messageAnswer": answer
+                    "messageAnswer": answer,
+                    "payload": find_id(payload)
                 },
                 "error":None,
                 "success": True
@@ -54,7 +85,7 @@ def create_question(request):
 def create_preview(request):
     serializer = PreviewSerializer(data=request.data)
     if serializer.is_valid():
-        if (len(serializer.data['sentence']) != len(serializer.data['word'])):
+        if (len(serializer.data['blockCategory']) != len(serializer.data['blockDescription'])):
             return Response({
                 "responseDto" : None,
                 "error" : {
@@ -63,7 +94,7 @@ def create_preview(request):
                 },
                 "success": False
             })
-        result = gemini_preview(serializer.data['sentence'], serializer.data['word'])
+        result = gemini_preview(serializer.data['blockCategory'], serializer.data['blockDescription'])
         return Response({
             "responseDto": {
                 "result": result

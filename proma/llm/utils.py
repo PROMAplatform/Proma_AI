@@ -11,7 +11,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 import base64
 import pytesseract
 from .models import message_tb
-from .template import history_template, implicit_template
+from .template import history_template, implicit_template, preview_template
 from langchain_teddynote.models import MultiModal
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Users\su\AppData\Local\tesseract.exe'
@@ -50,19 +50,20 @@ def gemini_pdf(prompt, messageQuestion, messageFile, history):
     )
     return (chain.invoke(messageQuestion))
 
-def gemini_preview(sen, word):
+def gemini_preview(cate, desc):
     llm = ChatGoogleGenerativeAI(model="gemini-pro")
     result = ""
-    for i in range(len(word)):
-        prompt_2 = ChatPromptTemplate.from_template('"{input}" 이 명사를 "{sen}"이 문장의 __부분에 맞춤법을 맞춰서 넣어줘. 명사와 종결 어미는 수정하지마. 결과 문장만 깔끔하게 보여줘. 이 문장들을 너가 잘 이해할 수 있게 프롬프트처럼 최종 수정된 문장만 보여줘.')
-        chain = (
-                prompt_2
-                | llm
-                | StrOutputParser()
-        )
-        #result.append(chain.invoke({"input": word[i], "sen": sen[i]}))
-        result += chain.invoke({"input": word[i], "sen": sen[i]})
-        result += " "
+    prompt_2 = ChatPromptTemplate.from_template("template[" + preview_template + '] to fit this template CATEGORY[{cate}] / DESCRIPTION[{desc}] Please put these content.')
+    chain = (
+            prompt_2
+            | llm
+            | StrOutputParser()
+    )
+    for i in range(len(cate)):
+        # result.append(chain.invoke({"input": word[i], "sen": sen[i]}))
+        result += chain.invoke({"cate": cate[i], "desc": desc[i]})
+        result += "\n"
+    # result += chain.invoke("A Few Details for More Successful Prompt Engineering")
     return result
 
 def pdf_loader(pdf):
@@ -133,11 +134,19 @@ def gemini_img(prompt, messageQuestion, messageFile, history):
     return ret
 
 def get_history(room):
-    chat_data = message_tb.objects.filter(chatroom_id=room).values()
-    history = ""
-    if (len(chat_data) == 0):
-        return ""
-    for i in chat_data:
-        history += '[human]:' + i['message_question'] + ' / [system]:' + i['message_answer'] + ' / '
+    try:
+        chat_data = message_tb.objects.filter(chatroom_id=room).values()
+        history = ""
+        if (len(chat_data) == 0):
+            return ""
+        for i in chat_data:
+            history += '[human]:' + i['message_question'] + ' / [system]:' + i['message_answer'] + ' / '
+        return history
+    except message_tb.DoesNotExist:
+        return "error"
 
-    return history
+def find_id(payload):
+    start = payload.find('id') + 5
+    for i in range(start, len(payload)):
+        if payload[i] == '"':
+            return payload[start:i]
