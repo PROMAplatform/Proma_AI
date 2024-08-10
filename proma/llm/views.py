@@ -36,7 +36,13 @@ def create_question(request):
             messageFile = serializer.data['messageFile']
             fileType = serializer.data['fileType']
             chatroomId = serializer.data['chatroomId']
-            chatroom = chatroom_tb.objects.get(pk=chatroomId)
+            try:
+                chatroom = chatroom_tb.objects.get(pk=chatroomId)
+            except chatroom_tb.DoesNotExist:
+                return Response({
+                    "error": 4044,
+                    "success": False
+                })
             if chatroom.user != user:
                 return Response({
                     "error": 40310,
