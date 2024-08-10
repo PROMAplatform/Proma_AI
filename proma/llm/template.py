@@ -21,3 +21,7 @@ Don't answer longer than 1024 characters.
 Please answer as if you were the speaker and the user was the listener.
 Don't rely too much on history and prompt.
 """
+
+preview_template = """
+[CATEGORY]: [DESCRIPTION]
+"""
