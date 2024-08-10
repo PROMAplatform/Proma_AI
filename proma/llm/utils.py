@@ -145,7 +145,11 @@ def get_history(room):
     except message_tb.DoesNotExist:
         return "error"
 
-def find_id(payload):
+def find_id(token):
+    token = token[7:]
+    token = token + '=' * (4 - len(token) % 4)
+    payload = base64.b64decode(token)
+    payload = str(payload)
     start = payload.find('id') + 5
     for i in range(start, len(payload)):
         if payload[i] == '"':

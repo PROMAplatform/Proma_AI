@@ -19,10 +19,7 @@ def create_question(request):
         })
     if serializer.is_valid():
         promptId = serializer.data['promptId']
-        token = token + '=' * (4 - len(token) % 4)
-        payload = base64.b64decode(token)
-        payload = str(payload)
-        token_id = find_id(payload)
+        token_id = find_id(token)
         user = user_tb.objects.get(social_id=token_id)
         try:
             if promptId is not None:
