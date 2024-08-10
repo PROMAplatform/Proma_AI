@@ -69,7 +69,6 @@ def create_question(request):
             return Response({
                 "responseDto": {
                     "messageAnswer": answer,
-                    "payload": find_id(payload)
                 },
                 "error":None,
                 "success": True
