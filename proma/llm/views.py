@@ -29,6 +29,7 @@ def create_question(request):
                         "error": 4039,
                         "success": False
                     })
+                prompt = prompt.prompt_preview
             else:
                 prompt = ""
             messageQuestion = serializer.data['messageQuestion']
@@ -48,11 +49,11 @@ def create_question(request):
                     "success": False
                 })
             if fileType == "image":
-                answer = gemini_img(prompt.prompt_preview, messageQuestion, messageFile, history)
+                answer = gemini_img(prompt, messageQuestion, messageFile, history)
             elif fileType == "pdf":
-                answer = gemini_pdf(prompt.prompt_preview, messageQuestion, messageFile, history)
+                answer = gemini_pdf(prompt, messageQuestion, messageFile, history)
             else:
-                answer = gemini_answer(prompt.prompt_preview, messageQuestion, history)
+                answer = gemini_answer(prompt, messageQuestion, history)
             data = {"prompt":promptId,
                     "message_answer": answer,
                     "message_file":messageFile,
