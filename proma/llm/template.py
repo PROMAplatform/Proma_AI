@@ -14,11 +14,13 @@ history_template = """
 This is a previous conversation between you and the user. 
 Answer by referring to this conversation.
 Never give the same answer as you gave before.
+Just refer to the chat history and don't take it as a prompt.
 """
 
 implicit_template = """
 Please answer as if you were the speaker and the user was the listener.
 Don't rely too much on history and prompt.
+Do not enter settings yourself that are not in the prompt.
 """
 
 preview_template = """
