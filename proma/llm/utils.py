@@ -25,8 +25,8 @@ def gemini_answer(prompt, messageQuestion, history):
     if history == "":
         tmp_history = ""
     else:
-        tmp_history = history_template + history
-    user_prompt = ChatPromptTemplate.from_template(implicit_template + tmp_history + "<prompt>:[" + prompt + "] <question>: {question}")
+        tmp_history = history + history_template
+    user_prompt = ChatPromptTemplate.from_template(implicit_template + tmp_history + "<prompt>:[" + prompt + "] <question>: {question}  ")
     chain = (
         user_prompt
         | llm
@@ -40,8 +40,8 @@ def gemini_pdf(prompt, messageQuestion, messageFile, history):
     if history == "":
         tmp_history = ""
     else:
-        tmp_history = history_template + history
-    user_prompt = ChatPromptTemplate.from_template(implicit_template + tmp_history + "{context}" + "<prompt>:[" + prompt + "] <question>:  + {question}")
+        tmp_history = history + history_template
+    user_prompt = ChatPromptTemplate.from_template(implicit_template + tmp_history + "{context}" + "<prompt>:[" + prompt + "] <question>:")
     chain = (
             {"context": retriever, "question": RunnablePassthrough()}
             | user_prompt
@@ -123,7 +123,7 @@ def gemini_img(prompt, messageQuestion, messageFile, history):
     if history == "":
         tmp_history = ""
     else:
-        tmp_history = history_template + history
+        tmp_history = history + history_template
     multimodal_gemini = MultiModal(
         llm, system_prompt=implicit_template + tmp_history + prompt, user_prompt=messageQuestion
     )
@@ -146,8 +146,11 @@ def get_history(room):
         return "error"
 
 def find_id(token):
-    token = token[7:]
+    token = token.split('.')[1]
     token = token + '=' * (4 - len(token) % 4)
+    # token_len = len(token)
+    # while len(token) % 4:
+    #     token += '='
     payload = base64.b64decode(token)
     payload = str(payload)
     start = payload.find('id') + 5

@@ -17,7 +17,7 @@ class user_tb(models.Model):
 class chatroom_tb(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(user_tb, on_delete=models.CASCADE)
-    chat_room_title = models.CharField(max_length=256)
+    chat_room_title = models.TextField()
     create_at = models.DateTimeField(auto_now_add=True)
     emoji = models.CharField(max_length=128)
     class Meta:

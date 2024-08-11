@@ -60,9 +60,9 @@ class message_tb(models.Model):
     id = models.AutoField(primary_key=True)
     chatroom = models.ForeignKey(chatroom_tb, on_delete=models.CASCADE)
     prompt = models.ForeignKey(prompt_tb, on_delete=models.CASCADE, null=True)
-    message_question = models.CharField(max_length=256)
-    message_file = models.CharField(max_length=1024, blank=True)
+    message_question = models.TextField(null=True)
+    message_file = models.TextField(blank=True)
     message_create_at = models.DateField(auto_now_add=True)
-    message_answer = models.CharField(max_length=1024)
+    message_answer = models.TextField()
     class Meta:
         db_table = 'message_tb'
