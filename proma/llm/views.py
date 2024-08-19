@@ -3,7 +3,7 @@ from .serializers import PromptSerializer, PreviewSerializer, MessageSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
-from .utils import gemini_answer, gemini_preview, chat_img, get_history, gemini_img, gemini_pdf, find_id
+from .utils import gemini_answer, gemini_preview, get_history, gemini_img, gemini_pdf, find_id, fallback_response
 from .models import prompt_tb
 from users.models import user_tb, chatroom_tb
 import base64
@@ -12,6 +12,7 @@ import base64
 def create_question(request):
     serializer = PromptSerializer(data=request.data)
     token = request.headers.get('Authorization')
+    language = request.headers.get('Accept-Language')
     if token is None:
         return Response({
             "error": 4046,
@@ -60,6 +61,8 @@ def create_question(request):
                 answer = gemini_pdf(prompt, messageQuestion, messageFile, history)
             else:
                 answer = gemini_answer(prompt, messageQuestion, history)
+            if len(answer) < 3:
+                answer = fallback_response(language)
             data = {"prompt":promptId,
                     "message_answer": answer,
                     "message_file":messageFile,

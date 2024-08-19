@@ -157,3 +157,10 @@ def find_id(token):
     for i in range(start, len(payload)):
         if payload[i] == '"':
             return payload[start:i]
+
+def fallback_response(lang):
+    if lang == "ko":
+        return "죄송합니다. 다시 질문해주시기 바랍니다."
+    if lang == "en":
+        return "I'm sorry, but could you please ask that again?"
+    return "fallback"
