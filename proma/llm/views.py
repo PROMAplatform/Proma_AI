@@ -3,9 +3,10 @@ from .serializers import PromptSerializer, PreviewSerializer, MessageSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
-from .utils import gemini_answer, gemini_preview, get_history, gemini_img, gemini_pdf, find_id, fallback_response
+from .utils import gemini_answer, gemini_preview, get_history, gemini_img, gemini_pdf, find_payload, fallback_response
 from .models import prompt_tb
 from users.models import user_tb, chatroom_tb
+from config.settings.base import JWT_SECRET_KEY
 import base64
 
 @api_view(['POST'])
@@ -20,7 +21,7 @@ def create_question(request):
         })
     if serializer.is_valid():
         promptId = serializer.data['promptId']
-        token_id = find_id(token)
+        token_id = find_payload(token, JWT_SECRET_KEY)['id']
         user = user_tb.objects.get(social_id=token_id)
         try:
             if promptId is not None:

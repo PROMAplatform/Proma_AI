@@ -14,7 +14,7 @@ from .models import message_tb
 from .template import history_template, implicit_template, preview_template
 from langchain_teddynote.models import MultiModal
 import jwt
-from config.settings.base import JWT_SECRET_KEY
+
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Users\su\AppData\Local\tesseract.exe'
 
@@ -145,16 +145,17 @@ def get_history(room):
             history += '[human]:' + i['message_question'] + ' / [system]:' + i['message_answer'] + ' / '
         return history
     except message_tb.DoesNotExist:
-        return "error"
+        return ""
 
-def find_id(token):
-    token = token.split(' ')[1]
+def find_payload(token, key):
+    if ' ' in token:
+        token = token.split(' ')[1]
     payload = jwt.decode(
         token,
-        base64.b64decode(JWT_SECRET_KEY),
+        base64.b64decode(key),
         algorithms=["HS256"]
     )
-    return payload['id']
+    return payload
 
 def fallback_response(lang):
     if lang == "ko":
