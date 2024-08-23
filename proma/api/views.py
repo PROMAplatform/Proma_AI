@@ -15,13 +15,23 @@ def api_question(request):
         token = serializer.data['apiToken']
         key = serializer.data['secretKey']
         messageQuestion = serializer.data['messageQuestion']
+        userLoginId = serializer.data['userLoginId']
         payload = find_payload(token, key)
         user = user_tb.objects.get(social_id=payload['id'])
         try:
-            chatroom = chatroom_tb.objects.get(chat_room_title=payload['id'])
+            chatroom = chatroom_tb.objects.get(chat_room_title=userLoginId)
+            if chatroom.user != user.id:
+                data = {
+                    "chat_room_title": userLoginId,
+                    "emoji": "💡",
+                    "user": user.id
+                }
+                chatroom_serializer = ChatroomSerilaizer(data=data)
+                chatroom_serializer.is_valid(raise_exception=True)
+                chatroom = chatroom_serializer.save()
         except chatroom_tb.DoesNotExist:
             data = {
-                "chat_room_title": payload['id'],
+                "chat_room_title": userLoginId,
                 "emoji": "💡",
                 "user": user.id
             }
@@ -31,12 +41,13 @@ def api_question(request):
         prompt = prompt_tb.objects.get(pk=payload['promptId']).prompt_preview
         history = get_history(chatroom.id)
         answer = gemini_answer(prompt, messageQuestion, history)
-        data = {"prompt": payload['promptId'],
-                "message_answer": answer,
-                "message_file": "",
-                "message_question": messageQuestion,
-                "chatroom": chatroom.id,
-                }
+        data = {
+            "prompt": payload['promptId'],
+            "message_answer": answer,
+            "message_file": "",
+            "message_question": messageQuestion,
+            "chatroom": chatroom.id,
+        }
         message_serializer = MessageSerializer(data=data)
         message_serializer.is_valid(raise_exception=True)
         message_serializer.save()
