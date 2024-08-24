@@ -19,7 +19,7 @@ import jwt
 pytesseract.pytesseract.tesseract_cmd = r'C:\Users\su\AppData\Local\tesseract.exe'
 
 def gemini_answer(prompt, messageQuestion, history):
-    llm = ChatGoogleGenerativeAI(model="gemini-pro")
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
     # llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
     #                  max_tokens=2048,  # 최대 토큰수
     #                  model_name='gpt-4o',  # 모델명
@@ -37,7 +37,7 @@ def gemini_answer(prompt, messageQuestion, history):
     return (chain.invoke(messageQuestion))
 
 def gemini_pdf(prompt, messageQuestion, messageFile, history):
-    llm = ChatGoogleGenerativeAI(model="gemini-pro")
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
     retriever = pdf_loader(messageFile)
     if history == "":
         tmp_history = ""
