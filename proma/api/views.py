@@ -20,7 +20,7 @@ def api_question(request):
         user = user_tb.objects.get(social_id=payload['id'])
         try:
             chatroom = chatroom_tb.objects.get(chat_room_title=userLoginId)
-            if chatroom.user != user.id:
+            if chatroom.user.id != user.id:
                 data = {
                     "chat_room_title": userLoginId,
                     "emoji": "💡",
