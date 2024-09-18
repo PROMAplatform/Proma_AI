@@ -3,11 +3,10 @@ from .serializers import PromptSerializer, PreviewSerializer, MessageSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
-from .utils import gemini_answer, gemini_preview, get_history, gemini_img, gemini_pdf, find_payload, fallback_response
+from .utils import gemini_answer, gemini_preview, get_history, gemini_img, gemini_pdf, find_payload, fallback_response, get_history_tuple, gemini_answer_his
 from .models import prompt_tb
 from users.models import user_tb, chatroom_tb
 from config.settings.base import JWT_SECRET_KEY
-import base64
 
 @api_view(['POST'])
 def create_question(request):
@@ -50,25 +49,22 @@ def create_question(request):
                     "error": 40310,
                     "success": False
                 })
+            # history = get_history_tuple(chatroomId)
             history = get_history(chatroomId)
-            if history == "error":
-                return Response({
-                    "error": 4044,
-                    "success": False
-                })
             if fileType == "image":
                 answer = gemini_img(prompt, messageQuestion, messageFile, history)
             elif fileType == "pdf":
                 answer = gemini_pdf(prompt, messageQuestion, messageFile, history)
             else:
                 answer = gemini_answer(prompt, messageQuestion, history)
+                # answer = gemini_answer_his(prompt, messageQuestion, history)
             if len(answer) < 3:
                 answer = fallback_response(language)
-            data = {"prompt":promptId,
+            data = {"prompt": promptId,
                     "message_answer": answer,
-                    "message_file":messageFile,
-                    "message_question":messageQuestion,
-                    "chatroom":chatroomId,
+                    "message_file": messageFile,
+                    "message_question": messageQuestion,
+                    "chatroom": chatroomId,
                     }
             message_serializer = MessageSerializer(data=data)
             message_serializer.is_valid(raise_exception=True)

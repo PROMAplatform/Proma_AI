@@ -1,4 +1,4 @@
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain.chat_models import ChatOpenAI
@@ -9,16 +9,13 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.messages import HumanMessage, SystemMessage
 import base64
-import pytesseract
 from .models import message_tb
 from .template import history_template, implicit_template, preview_template
 from langchain_teddynote.models import MultiModal
 import jwt
 
-
-pytesseract.pytesseract.tesseract_cmd = r'C:\Users\su\AppData\Local\tesseract.exe'
-
 def gemini_answer(prompt, messageQuestion, history):
+    # llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro")
     llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
     # llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
     #                  max_tokens=2048,  # 최대 토큰수
@@ -35,6 +32,31 @@ def gemini_answer(prompt, messageQuestion, history):
         | StrOutputParser()
     )
     return (chain.invoke(messageQuestion))
+
+def gemini_answer_his(prompt, messageQuestion, history):
+    # llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro")
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
+    # llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
+    #                  max_tokens=2048,  # 최대 토큰수
+    #                  model_name='gpt-4o',  # 모델명
+    #                  )
+    user_prompt = ChatPromptTemplate.from_messages(
+        [
+            implicit_template + "<prompt>:[" + prompt + "] <question>: {question}",
+            MessagesPlaceholder("history")
+        ]
+    )
+    chain = (
+        user_prompt
+        | llm
+        | StrOutputParser()
+    )
+    return (chain.invoke(
+        {
+            "history": history,
+            "question": messageQuestion
+        }
+    ))
 
 def gemini_pdf(prompt, messageQuestion, messageFile, history):
     llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
@@ -100,13 +122,13 @@ def chat_img(prompt, messageQuestion, messageFile, history):
     system_message = SystemMessage(
         content=prompt
     )
-    if history == "":
-        tmp_history = ""
-    else:
-        tmp_history = history_template + history
+    # if history == "":
+    #     tmp_history = ""
+    # else:
+    #     tmp_history = history_template + history
     vision_message = HumanMessage(
         content=[
-            {"type": "text", "text": implicit_template + tmp_history + "<prompt>:[" + prompt + "] <question>: "+messageQuestion},
+            {"type": "text", "text": implicit_template + "<prompt>:[" + prompt + "] <question>: "+messageQuestion},
             {
                 "type": "image_url",
                 "image_url": {
@@ -146,6 +168,19 @@ def get_history(room):
         return history
     except message_tb.DoesNotExist:
         return ""
+
+def get_history_tuple(room):
+    try:
+        chat_data = message_tb.objects.filter(chatroom_id=room).values()
+        history = []
+        if (len(chat_data) == 0):
+            return ""
+        for i in chat_data:
+            history.append(("human",i['message_question']))
+            history.append(("ai",i['message_answer']))
+        return history
+    except message_tb.DoesNotExist:
+        return []
 
 def find_payload(token, key):
     if ' ' in token:

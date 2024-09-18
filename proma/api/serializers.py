@@ -8,6 +8,12 @@ class QuestionSerializer(serializers.Serializer):
     secretKey = serializers.CharField(max_length=1024)
     messageQuestion = serializers.CharField(max_length=1024)
 
+class TestSerializer(serializers.Serializer):
+    promptId = serializers.IntegerField(allow_null=True, required=False)
+    chatroomId = serializers.IntegerField(allow_null=True)
+    messageQuestion = serializers.CharField(max_length=10000)
+    messageFile = serializers.CharField(max_length=512, allow_blank=True)
+
 class ChatroomSerilaizer(serializers.ModelSerializer):
     class Meta:
         model = chatroom_tb

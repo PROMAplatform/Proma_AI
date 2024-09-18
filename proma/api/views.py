@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import QuestionSerializer, ChatroomSerilaizer, MessageSerializer
+from .serializers import QuestionSerializer, ChatroomSerilaizer, MessageSerializer, TestSerializer
 from llm.utils import find_payload, get_history, gemini_answer
 from llm.models import prompt_tb
 from users.models import user_tb, chatroom_tb
@@ -58,3 +58,13 @@ def api_question(request):
             "success": True,
             "error": None
         }, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+def api_test(request):
+    serializer = TestSerializer(data=request.data)
+    if serializer.is_valid():
+        promptId = serializer.data['promptId']
+        chatroomId = serializer.data['chatroomId']
+        messageQuestion = serializer.data['messageQuestion']
+        messageFile = serializer.data['messageFile']
+
