@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import QuestionSerializer, ChatroomSerilaizer, MessageSerializer, TestSerializer
-from llm.utils import find_payload, get_history, gemini_answer
+from llm.utils import find_payload, get_history, llm_answer
 from llm.models import prompt_tb
 from users.models import user_tb, chatroom_tb
 # Create your views here.
@@ -40,7 +40,7 @@ def api_question(request):
             chatroom = chatroom_serializer.save()
         prompt = prompt_tb.objects.get(pk=payload['promptId']).prompt_preview
         history = get_history(chatroom.id)
-        answer = gemini_answer(prompt, messageQuestion, history)
+        answer = llm_answer(prompt, messageQuestion, history)
         data = {
             "prompt": payload['promptId'],
             "message_answer": answer,

@@ -15,13 +15,13 @@ from .template import history_template, implicit_template, preview_template
 from langchain_teddynote.models import MultiModal
 import jwt
 
-def gemini_answer(prompt, messageQuestion, history):
+def llm_answer(prompt, messageQuestion, history):
     # llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro")
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
-    # llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
-    #                  max_tokens=2048,  # 최대 토큰수
-    #                  model_name='gpt-4o',  # 모델명
-    #                  )
+    # llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
+    llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
+                     max_tokens=2048,  # 최대 토큰수
+                     model_name='gpt-4o',  # 모델명
+                     )
     if history == "":
         tmp_history = ""
     else:
@@ -34,7 +34,7 @@ def gemini_answer(prompt, messageQuestion, history):
     )
     return (chain.invoke(messageQuestion))
 
-def gemini_answer_his(prompt, messageQuestion, history):
+def llm_answer_his(prompt, messageQuestion, history):
     # llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
     llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
                      max_tokens=2048,  # 최대 토큰수
@@ -58,7 +58,7 @@ def gemini_answer_his(prompt, messageQuestion, history):
         }
     ))
 
-def gemini_pdf(prompt, messageQuestion, messageFile, history):
+def llm_pdf(prompt, messageQuestion, messageFile, history):
     # llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
     llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
                      max_tokens=2048,  # 최대 토큰수
@@ -78,7 +78,7 @@ def gemini_pdf(prompt, messageQuestion, messageFile, history):
     )
     return (chain.invoke(messageQuestion))
 
-def gemini_preview(cate, desc):
+def llm_preview(cate, desc):
     llm = ChatGoogleGenerativeAI(model="gemini-pro")
     result = ""
     prompt_2 = ChatPromptTemplate.from_template("template[" + preview_template + '] to fit this template CATEGORY[{cate}] / DESCRIPTION[{desc}] Please put these content.')
@@ -106,7 +106,7 @@ def pdf_loader(pdf):
     retriever = docsearch.as_retriever()
     return retriever
 
-def gemini_img(prompt, messageQuestion, messageFile, history):
+def llm_img(prompt, messageQuestion, messageFile, history):
     # llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
     llm = ChatOpenAI(temperature=0,  # 창의성 (0.0 ~ 2.0)
                      max_tokens=2048,  # 최대 토큰수

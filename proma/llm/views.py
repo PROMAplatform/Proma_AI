@@ -3,7 +3,7 @@ from .serializers import PromptSerializer, PreviewSerializer, MessageSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
-from .utils import gemini_answer, gemini_preview, get_history, gemini_img, gemini_pdf, find_payload, fallback_response, get_history_tuple, gemini_answer_his
+from .utils import llm_answer, llm_preview, get_history, llm_img, llm_pdf, find_payload, fallback_response, get_history_tuple, llm_answer_his
 from .models import prompt_tb
 from users.models import user_tb, chatroom_tb
 from config.settings.base import JWT_SECRET_KEY
@@ -52,12 +52,12 @@ def create_question(request):
             # history = get_history_tuple(chatroomId)
             history = get_history(chatroomId)
             if fileType == "image":
-                answer = gemini_img(prompt, messageQuestion, messageFile, history)
+                answer = llm_img(prompt, messageQuestion, messageFile, history)
             elif fileType == "pdf":
-                answer = gemini_pdf(prompt, messageQuestion, messageFile, history)
+                answer = llm_pdf(prompt, messageQuestion, messageFile, history)
             else:
-                answer = gemini_answer(prompt, messageQuestion, history)
-                # answer = gemini_answer_his(prompt, messageQuestion, history)
+                answer = llm_answer(prompt, messageQuestion, history)
+                # answer = llm_answer_his(prompt, messageQuestion, history)
             if len(answer) < 3:
                 answer = fallback_response(language)
             data = {"prompt": promptId,
@@ -96,7 +96,7 @@ def create_preview(request):
                 },
                 "success": False
             })
-        result = gemini_preview(serializer.data['blockCategory'], serializer.data['blockDescription'])
+        result = llm_preview(serializer.data['blockCategory'], serializer.data['blockDescription'])
         return Response({
             "responseDto": {
                 "result": result
