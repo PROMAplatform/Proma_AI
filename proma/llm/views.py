@@ -5,6 +5,7 @@ from rest_framework.decorators import api_view
 from rest_framework import status
 from .utils import llm_answer, llm_preview, get_history, llm_img, llm_pdf, find_payload, fallback_response, get_history_tuple, llm_answer_his
 from .models import prompt_tb
+from .template import korean_template
 from users.models import user_tb, chatroom_tb
 from config.settings.base import JWT_SECRET_KEY
 
@@ -33,6 +34,8 @@ def create_question(request):
                 prompt = prompt.prompt_preview
             else:
                 prompt = ""
+            if language == "ko":
+                prompt += korean_template
             messageQuestion = serializer.data['messageQuestion']
             messageFile = serializer.data['messageFile']
             fileType = serializer.data['fileType']

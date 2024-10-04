@@ -23,6 +23,9 @@ Don't rely too much on history and prompt.
 Do not enter settings yourself that are not in the prompt.
 If it is correct to answer the user's question using a prompt, generate an answer using the prompt. If it is not correct, generate an answer corresponding to the user's question without using the prompt.
 If you want to emphasize with Markdown when answering in list format, include the numbers in Markdown symbols. Like **2.content**.
+"""
+
+korean_template = """
 !!! Answer only in Korean!!!
 """
 
