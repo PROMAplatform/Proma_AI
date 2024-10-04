@@ -4,6 +4,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain.chat_models import ChatOpenAI
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_core.runnables import RunnablePassthrough
 from langchain_community.document_loaders import PyPDFLoader
@@ -34,12 +35,11 @@ def gemini_answer(prompt, messageQuestion, history):
     return (chain.invoke(messageQuestion))
 
 def gemini_answer_his(prompt, messageQuestion, history):
-    # llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro")
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
-    # llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
-    #                  max_tokens=2048,  # 최대 토큰수
-    #                  model_name='gpt-4o',  # 모델명
-    #                  )
+    # llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
+    llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
+                     max_tokens=2048,  # 최대 토큰수
+                     model_name='gpt-4o',  # 모델명
+                     )
     user_prompt = ChatPromptTemplate.from_messages(
         [
             implicit_template + "<prompt>:[" + prompt + "] <question>: {question}",
@@ -59,7 +59,11 @@ def gemini_answer_his(prompt, messageQuestion, history):
     ))
 
 def gemini_pdf(prompt, messageQuestion, messageFile, history):
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
+    # llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
+    llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
+                     max_tokens=2048,  # 최대 토큰수
+                     model_name='gpt-4o',  # 모델명
+                     )
     retriever = pdf_loader(messageFile)
     if history == "":
         tmp_history = ""
@@ -97,53 +101,17 @@ def pdf_loader(pdf):
     document = loader.load()
     text_splitter = CharacterTextSplitter(chunk_size=256, chunk_overlap=50)
     texts = text_splitter.split_documents(document)
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")  # gemini의 임베딩 모델
+    embeddings = OpenAIEmbeddings()
     docsearch = Chroma.from_documents(texts, embeddings)
     retriever = docsearch.as_retriever()
     return retriever
 
-def encode_image(image_path):
-    with open(image_path, "rb") as image_file:
-        img = base64.b64encode(image_file.read()).decode("utf-8")
-
-    return f"data:image/jpeg;base64,{img}"
-
-def chat_img(prompt, messageQuestion, messageFile, history):
-    llm = ChatGoogleGenerativeAI(model="gemini-pro")
-    # llm = ChatOpenAI(temperature=0,  # 창의성 (0.0 ~ 2.0)
-    #                  max_tokens=2048,  # 최대 토큰수
-    #                  model_name='gpt-4o',  # 모델명
-    #                  )
-    if messageFile:
-        image_url = messageFile
-    else:
-        base64_image = encode_image(messageFile)
-        image_url = f"{base64_image}"
-    system_message = SystemMessage(
-        content=prompt
-    )
-    # if history == "":
-    #     tmp_history = ""
-    # else:
-    #     tmp_history = history_template + history
-    vision_message = HumanMessage(
-        content=[
-            {"type": "text", "text": implicit_template + "<prompt>:[" + prompt + "] <question>: "+messageQuestion},
-            {
-                "type": "image_url",
-                "image_url": {
-                    "url": image_url,
-                    "detail": "auto",
-                },
-            },
-        ]
-    )
-    output = llm.invoke([system_message, vision_message])
-    return output.content
-
-
 def gemini_img(prompt, messageQuestion, messageFile, history):
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
+    # llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
+    llm = ChatOpenAI(temperature=0,  # 창의성 (0.0 ~ 2.0)
+                     max_tokens=2048,  # 최대 토큰수
+                     model_name='gpt-4o',  # 모델명
+                     )
     if history == "":
         tmp_history = ""
     else:

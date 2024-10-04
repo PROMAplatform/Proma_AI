@@ -89,10 +89,10 @@ def create_preview(request):
     if serializer.is_valid():
         if (len(serializer.data['blockCategory']) != len(serializer.data['blockDescription'])):
             return Response({
-                "responseDto" : None,
-                "error" : {
-                    "code" : 6001,
-                    "message" : "단어와 블록의 개수가 일치하지 않습니다."
+                "responseDto": None,
+                "error": {
+                    "code": 6001,
+                    "message": "단어와 블록의 개수가 일치하지 않습니다."
                 },
                 "success": False
             })
