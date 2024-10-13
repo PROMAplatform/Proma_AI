@@ -1,23 +1,15 @@
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain.chat_models import ChatOpenAI
-from langchain.text_splitter import CharacterTextSplitter
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
-from langchain_core.runnables import RunnablePassthrough
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import SystemMessage
+from langchain.chains import ConversationChain
+from langchain.memory import ConversationBufferMemory
 import base64
 from .models import message_tb
 from .template import history_template, implicit_template, preview_template
-from langchain_teddynote.models import MultiModal
 import jwt
 
 def llm_answer(prompt, messageQuestion, history):
-    # llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro")
-    # llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
     llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
                      max_tokens=2048,  # 최대 토큰수
                      model_name='gpt-4o',  # 모델명
@@ -35,107 +27,23 @@ def llm_answer(prompt, messageQuestion, history):
     return (chain.invoke(messageQuestion))
 
 def llm_answer_his(prompt, messageQuestion, history):
-    # llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
     llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
                      max_tokens=2048,  # 최대 토큰수
                      model_name='gpt-4o',  # 모델명
                      )
-    user_prompt = ChatPromptTemplate.from_messages(
-        [
-            implicit_template + "<prompt>:[" + prompt + "] <question>: {question}",
-            MessagesPlaceholder("history")
-        ]
+    memory = ConversationBufferMemory()
+    for i in history:
+        memory.save_context({"input": i["input"]},
+                            {"outputs": i["outputs"]})
+    system_message = SystemMessage(content=implicit_template + prompt)
+    human_message = HumanMessagePromptTemplate.from_template("current content: {history}, <question>:{input}")
+    user_prompt = ChatPromptTemplate(messages=[system_message, human_message])
+    conversation = ConversationChain(
+        prompt=user_prompt,
+        llm=llm,
+        memory=memory,
     )
-    chain = (
-        user_prompt
-        | llm
-        | StrOutputParser()
-    )
-    return (chain.invoke(
-        {
-            "history": history,
-            "question": messageQuestion
-        }
-    ))
-
-def llm_pdf(prompt, messageQuestion, messageFile, history):
-    # llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
-    llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
-                     max_tokens=2048,  # 최대 토큰수
-                     model_name='gpt-4o',  # 모델명
-                     )
-    retriever = pdf_loader(messageFile)
-    if history == "":
-        tmp_history = ""
-    else:
-        tmp_history = history + history_template
-    user_prompt = ChatPromptTemplate.from_template(implicit_template + tmp_history + "{context}" + "<prompt>:[" + prompt + "] <question>:")
-    chain = (
-            {"context": retriever, "question": RunnablePassthrough()}
-            | user_prompt
-            | llm
-            | StrOutputParser()
-    )
-    return (chain.invoke(messageQuestion))
-
-def llm_preview(cate, desc):
-    llm = ChatGoogleGenerativeAI(model="gemini-pro")
-    result = ""
-    prompt_2 = ChatPromptTemplate.from_template("template[" + preview_template + '] to fit this template CATEGORY[{cate}] / DESCRIPTION[{desc}] Please put these content.')
-    chain = (
-            prompt_2
-            | llm
-            | StrOutputParser()
-    )
-    for i in range(len(cate)):
-        # result.append(chain.invoke({"input": word[i], "sen": sen[i]}))
-        result += chain.invoke({"cate": cate[i], "desc": desc[i]})
-        result += "\n"
-    # result += chain.invoke("A Few Details for More Successful Prompt Engineering")
-    return result
-
-def pdf_loader(pdf):
-    if pdf is "":
-        return None
-    loader = PyPDFLoader(pdf)
-    document = loader.load()
-    text_splitter = CharacterTextSplitter(chunk_size=256, chunk_overlap=50)
-    texts = text_splitter.split_documents(document)
-    embeddings = OpenAIEmbeddings()
-    docsearch = Chroma.from_documents(texts, embeddings)
-    retriever = docsearch.as_retriever()
-    return retriever
-
-def llm_img(prompt, messageQuestion, messageFile, history):
-    # llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
-    llm = ChatOpenAI(temperature=0,  # 창의성 (0.0 ~ 2.0)
-                     max_tokens=2048,  # 최대 토큰수
-                     model_name='gpt-4o',  # 모델명
-                     )
-    if history == "":
-        tmp_history = ""
-    else:
-        tmp_history = history + history_template
-    multimodal_gemini = MultiModal(
-        llm, system_prompt=implicit_template + tmp_history + prompt, user_prompt=messageQuestion
-    )
-    answer = multimodal_gemini.stream(messageFile)
-    ret = ''
-    for i in answer:
-        ret += i.content
-    return ret
-
-def get_history(room):
-    try:
-        chat_data = message_tb.objects.filter(chatroom_id=room).values()
-        history = ""
-        if (len(chat_data) == 0):
-            return ""
-        for i in chat_data:
-            history += '[human]:' + i['message_question'] + ' / [system]:' + i['message_answer'] + ' / '
-        return history
-    except message_tb.DoesNotExist:
-        return ""
+    return conversation.invoke(messageQuestion)["response"]
 
 def get_history_tuple(room):
     try:
@@ -144,8 +52,7 @@ def get_history_tuple(room):
         if (len(chat_data) == 0):
             return ""
         for i in chat_data:
-            history.append(("human",i['message_question']))
-            history.append(("ai",i['message_answer']))
+            history.append({"input": i['message_question'], "outputs": i['message_answer']})
         return history
     except message_tb.DoesNotExist:
         return []
