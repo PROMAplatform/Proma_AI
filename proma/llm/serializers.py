@@ -11,10 +11,6 @@ class PromptSerializer(serializers.Serializer):
 class EvalSerializer(serializers.Serializer):
     promptId = serializers.IntegerField(allow_null=True, required=False)
 
-class PreviewSerializer(serializers.Serializer):
-    blockCategory = serializers.ListField(child=serializers.CharField(max_length=200))
-    blockDescription = serializers.ListField(child=serializers.CharField(max_length=200))
-
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = message_tb

@@ -1,14 +1,12 @@
 from .serializers import (
     PromptSerializer,
-    PreviewSerializer,
-    EvalSerializer
+    EvalSerializer,
+    MessageSerializer
 )
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
 from .utils import (
-    llm_preview,
-    llm_pdf,
     find_payload,
     fallback_response,
     get_history_tuple,
@@ -66,28 +64,24 @@ def create_question(request):
                     "success": False
                 })
             history = get_history_tuple(chatroomId)
-            # history = get_history(chatroomId)
             if fileType == "image":
                 answer = llm_answer_his_img(prompt, messageQuestion, history, messageFile)
-                # answer = llm_img(prompt, messageQuestion, messageFile, history)
             elif fileType == "pdf":
                 answer = llm_answer_his_pdf(prompt, messageQuestion, messageFile, history)
-                # answer = llm_pdf(prompt, messageQuestion, messageFile, history)
             else:
-                #answer = llm_answer(prompt, messageQuestion, history)
                 answer = llm_answer_his(prompt, messageQuestion, history)
             if len(answer) < 3:
                 answer = fallback_response(language)
-            # data = {
-            #         "prompt": promptId,
-            #         "message_answer": answer["response"],
-            #         "message_file": messageFile,
-            #         "message_question": messageQuestion,
-            #         "chatroom": chatroomId,
-            #         }
-            # message_serializer = MessageSerializer(data=data)
-            # message_serializer.is_valid(raise_exception=True)
-            # message_serializer.save()
+            data = {
+                    "prompt": promptId,
+                    "message_answer": answer,
+                    "message_file": messageFile,
+                    "message_question": messageQuestion,
+                    "chatroom": chatroomId,
+                    }
+            message_serializer = MessageSerializer(data=data)
+            message_serializer.is_valid(raise_exception=True)
+            message_serializer.save()
             return Response({
                 "responseDto": {
                     "messageAnswer": answer,
@@ -151,26 +145,3 @@ def prompt_evaluation(request):
         "error": None,
         "success": True
     }, status=status.HTTP_200_OK)
-
-@api_view(['POST'])
-def create_preview(request):
-    serializer = PreviewSerializer(data=request.data)
-    if serializer.is_valid():
-        if (len(serializer.data['blockCategory']) != len(serializer.data['blockDescription'])):
-            return Response({
-                "responseDto": None,
-                "error": {
-                    "code": 6001,
-                    "message": "단어와 블록의 개수가 일치하지 않습니다."
-                },
-                "success": False
-            })
-        result = llm_preview(serializer.data['blockCategory'], serializer.data['blockDescription'])
-        return Response({
-            "responseDto": {
-                "result": result
-            },
-            "error": None,
-            "success": True
-        }, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
