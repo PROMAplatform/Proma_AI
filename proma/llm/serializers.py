@@ -8,6 +8,9 @@ class PromptSerializer(serializers.Serializer):
     fileType = serializers.CharField(max_length=128, allow_blank=True)
     messageFile = serializers.CharField(max_length=512, allow_blank=True)
 
+class EvalSerializer(serializers.Serializer):
+    promptId = serializers.IntegerField(allow_null=True, required=False)
+
 class PreviewSerializer(serializers.Serializer):
     blockCategory = serializers.ListField(child=serializers.CharField(max_length=200))
     blockDescription = serializers.ListField(child=serializers.CharField(max_length=200))

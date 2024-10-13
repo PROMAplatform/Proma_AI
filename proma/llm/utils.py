@@ -1,4 +1,4 @@
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, HumanMessagePromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain.chat_models import ChatOpenAI
@@ -9,6 +9,15 @@ from langchain_community.vectorstores import Chroma
 from langchain_core.runnables import RunnablePassthrough
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains import (
+    ConversationChain,
+    ConversationalRetrievalChain,
+    StuffDocumentsChain,
+    create_retrieval_chain,
+    LLMChain,
+)
+from langchain.memory import ConversationBufferMemory
 import base64
 from .models import message_tb
 from .template import history_template, implicit_template, preview_template
@@ -40,23 +49,19 @@ def llm_answer_his(prompt, messageQuestion, history):
                      max_tokens=2048,  # 최대 토큰수
                      model_name='gpt-4o',  # 모델명
                      )
-    user_prompt = ChatPromptTemplate.from_messages(
-        [
-            implicit_template + "<prompt>:[" + prompt + "] <question>: {question}",
-            MessagesPlaceholder("history")
-        ]
+    memory = ConversationBufferMemory()
+    for i in history:
+        memory.save_context({"input": i["input"]},
+                            {"outputs": i["outputs"]})
+    system_message = SystemMessage(content=implicit_template + prompt)
+    human_message = HumanMessagePromptTemplate.from_template("current content: {history}, <question>:{input}")
+    user_prompt = ChatPromptTemplate(messages=[system_message, human_message])
+    conversation = ConversationChain(
+        prompt=user_prompt,
+        llm=llm,
+        memory=memory,
     )
-    chain = (
-        user_prompt
-        | llm
-        | StrOutputParser()
-    )
-    return (chain.invoke(
-        {
-            "history": history,
-            "question": messageQuestion
-        }
-    ))
+    return conversation.invoke(messageQuestion)
 
 def llm_pdf(prompt, messageQuestion, messageFile, history):
     # llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
@@ -65,18 +70,51 @@ def llm_pdf(prompt, messageQuestion, messageFile, history):
                      model_name='gpt-4o',  # 모델명
                      )
     retriever = pdf_loader(messageFile)
-    if history == "":
-        tmp_history = ""
-    else:
-        tmp_history = history + history_template
-    user_prompt = ChatPromptTemplate.from_template(implicit_template + tmp_history + "{context}" + "<prompt>:[" + prompt + "] <question>:")
-    chain = (
-            {"context": retriever, "question": RunnablePassthrough()}
-            | user_prompt
-            | llm
-            | StrOutputParser()
+    # if history == "":
+    #     tmp_history = ""
+    # else:
+    #     tmp_history = history + history_template
+    # user_prompt = ChatPromptTemplate.from_template(implicit_template + tmp_history + "{context}" + "<prompt>:[" + prompt + "] <question>:")
+    memory = ConversationBufferMemory(memory_key='chat_history')
+    for i in history:
+        memory.save_context(
+            {"input": i["input"]},
+            {"outputs": i["outputs"]}
+        )
+    system_message = SystemMessage(content=implicit_template + prompt)
+    human_message = HumanMessagePromptTemplate.from_template("current content: {chat_history}, context: {context} <question>: {input}")
+    user_prompt = ChatPromptTemplate(messages=[system_message, human_message])
+    question_generator_chain = LLMChain(
+        llm=llm,
+        prompt=user_prompt,
     )
-    return (chain.invoke(messageQuestion))
+    # combine_docs_chain = create_stuff_documents_chain(llm, user_prompt)
+
+    combine_docs_chain = StuffDocumentsChain(
+        llm_chain=question_generator_chain,
+        document_variable_name="context",
+        memory=memory,
+    )
+    retrieval_docs = (lambda x: x["input"]) | retriever
+    retrieval_chain = (
+        RunnablePassthrough.assign(
+            context=retrieval_docs.with_config(run_name="retrieve_documents"),
+        ).assign(answer=combine_docs_chain)
+    ).with_config(run_name="retrieval_chain")
+    # retrieval_chain = create_retrieval_chain(retriever, combine_docs_chain)
+    # chain = ConversationalRetrievalChain(
+    #     # {"context": retriever},
+    #     combine_docs_chain=combine_docs_chain,
+    #     question_generator=question_generator_chain,
+    #     retriever=retriever,
+    #     memory=memory
+    # )
+    # chain = (
+    #         {"context": retriever, "question": RunnablePassthrough(), "history": memory.load_memory_variables({})}
+    #         | user_prompt
+    #         | llm
+    # )
+    return (retrieval_chain.invoke({"input": messageQuestion}))
 
 def llm_preview(cate, desc):
     llm = ChatGoogleGenerativeAI(model="gemini-pro")
@@ -144,8 +182,8 @@ def get_history_tuple(room):
         if (len(chat_data) == 0):
             return ""
         for i in chat_data:
-            history.append(("human",i['message_question']))
-            history.append(("ai",i['message_answer']))
+            history.append({"input": i['message_question'], "outputs": i['message_answer']})
+            # history.append({"output": i['message_answer']})
         return history
     except message_tb.DoesNotExist:
         return []
