@@ -140,7 +140,7 @@ def prompt_evaluation(request):
         "responseDto": {
             "promptEvaluation": result,
             # "prompt": prompt,
-            "chat_data": chat_data,
+            # "chat_data": chat_data,
         },
         "error": None,
         "success": True

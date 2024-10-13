@@ -6,25 +6,8 @@ from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
 import base64
 from .models import message_tb
-from .template import history_template, implicit_template, preview_template
+from .template import implicit_template
 import jwt
-
-def llm_answer(prompt, messageQuestion, history):
-    llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
-                     max_tokens=2048,  # 최대 토큰수
-                     model_name='gpt-4o',  # 모델명
-                     )
-    if history == "":
-        tmp_history = ""
-    else:
-        tmp_history = history + history_template
-    user_prompt = ChatPromptTemplate.from_template(implicit_template + tmp_history + "<prompt>:[" + prompt + "] <question>: {question}  ")
-    chain = (
-        user_prompt
-        | llm
-        | StrOutputParser()
-    )
-    return (chain.invoke(messageQuestion))
 
 def llm_answer_his(prompt, messageQuestion, history):
     llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
