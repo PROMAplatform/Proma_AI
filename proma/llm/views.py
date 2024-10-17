@@ -122,20 +122,20 @@ def prompt_evaluation(request):
                 chat_data = get_chat_data(promptId)
                 if (len(chat_data) < 5):
                     return Response({
-                        "error": 40311,
+                        "error": "Forbidden: Message Data Not Enough",
                         "success": False
-                    }, status=status.HTTP_403_FORBIDDEN)
+                    })
                 result = prompt_eval(prompt, chat_data)
             else:
                 return Response({
                     "error": 4039,
                     "success": False
-                }, status=status.HTTP_403_FORBIDDEN)
+                })
         except prompt_tb.DoesNotExist:
             return Response({
                 "error":4043,
                 "success": False
-            }, status=status.HTTP_404_NOT_FOUND)
+            })
     return Response({
         "responseDto": {
             "promptEvaluation": result,
