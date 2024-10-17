@@ -13,7 +13,7 @@ from .models import message_tb
 
 def prompt_eval(prompt, chat_data):
     llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
-                     max_tokens=2048,  # 최대 토큰수
+                     max_tokens=4096,  # 최대 토큰수
                      model_name='gpt-4o',  # 모델명
                      )
     eval_prompt = [eval_coh_template, eval_con_template, eval_flu_template, eval_rel_template]
@@ -33,10 +33,10 @@ def prompt_eval(prompt, chat_data):
                 "Output": chat_data[i]["output"],
             })))
     return {
-        "Coherence": sum(score[0]) / len(score[0]),
-        "Consistency": sum(score[1]) / len(score[1]),
-        "Fluency": sum(score[2]) / len(score[2]),
-        "Relevance": sum(score[3]) / len(score[3]),
+        "Coherence": round(sum(score[0]) / len(score[0]), 2),
+        "Consistency": round(sum(score[1]) / len(score[1]), 2),
+        "Fluency": round(sum(score[2]) / len(score[2]), 2),
+        "Relevance": round(sum(score[3]) / len(score[3]), 2),
     }
 
 def eval_comment(prompt, score):

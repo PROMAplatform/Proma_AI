@@ -14,7 +14,7 @@ korean_template = """
 eval_coh_template = """
 You will be given a prompt, a user question, and the corresponding output generated in response to the user's question.
 
-Your task is to rate the output on one metric.
+Your task is to rigorously evaluate the output for one metric.
 
 Please make sure you read and understand these instructions carefully. Please keep this document open while reviewing, and refer to it as needed.
 
@@ -44,7 +44,7 @@ Output:
 
 ---
 
-Evaluation Form (scores ONLY):
+Print out only the scores.
 
 ---
 """
@@ -52,7 +52,7 @@ Evaluation Form (scores ONLY):
 eval_con_template = """
 You will be given a prompt, a user question, and the corresponding output generated from the prompt in response to the user’s question.
 
-Your task is to rate the output on one metric.
+Your task is to rigorously evaluate the output for one metric.
 
 Please make sure you read and understand these instructions carefully. Please keep this document open while reviewing, and refer to it as needed.
 
@@ -77,14 +77,14 @@ User Question:
 Output:
 {Output}
 
-Evaluation Form (scores ONLY):
+Print out only the scores.
 
 """
 
 eval_flu_template = """
 You will be given a prompt, a **user question**, and the corresponding **output** generated in response to the user’s question.
 
-Your task is to rate the output on one metric.
+Your task is to rigorously evaluate the output for one metric.
 
 Please make sure you read and understand these instructions carefully. Please keep this document open while reviewing, and refer to it as needed.
 
@@ -118,14 +118,14 @@ Output:
 
 ---
 
-Evaluation Form (scores ONLY):
+Print out only the scores.
 
 """
 
 eval_rel_template = """
 You will be given a prompt, a user question, and the corresponding output generated in response to the user’s question.
 
-Your task is to rate the output on one metric.
+Your task is to rigorously evaluate the output for one metric.
 
 Please make sure you read and understand these instructions carefully. Please keep this document open while reviewing, and refer to it as needed.
 
@@ -157,7 +157,7 @@ User Question:
 Output:
 {Output}
 
-Evaluation Form (scores ONLY):
+Print out only the scores.
 """
 
 eval_comment_template = """
