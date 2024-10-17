@@ -29,7 +29,7 @@ def create_question(request):
         return Response({
             "error": 4046,
             "success": False
-        })
+        }, status=status.HTTP_404_NOT_FOUND)
     if serializer.is_valid():
         promptId = serializer.data['promptId']
         token_id = find_payload(token, JWT_SECRET_KEY)['id']
@@ -41,7 +41,7 @@ def create_question(request):
                     return Response({
                         "error": 4039,
                         "success": False
-                    })
+                    }, status=status.HTTP_403_FORBIDDEN)
                 prompt = prompt.prompt_preview
             else:
                 prompt = ""
@@ -57,12 +57,12 @@ def create_question(request):
                 return Response({
                     "error": 4044,
                     "success": False
-                })
+                }, status=status.HTTP_404_NOT_FOUND)
             if chatroom.user != user:
                 return Response({
                     "error": 40310,
                     "success": False
-                })
+                }, status=status.HTTP_403_FORBIDDEN)
             history = get_history_tuple(chatroomId)
             if fileType == "image":
                 answer = llm_answer_his_img(prompt, messageQuestion, history, messageFile)
@@ -93,7 +93,7 @@ def create_question(request):
             return Response({
                 "error":4043,
                 "success": False
-            })
+            }, status=status.HTTP_404_NOT_FOUND)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
@@ -124,18 +124,18 @@ def prompt_evaluation(request):
                     return Response({
                         "error": 40311,
                         "success": False
-                    })
+                    }, status=status.HTTP_403_FORBIDDEN)
                 result = prompt_eval(prompt, chat_data)
             else:
                 return Response({
                     "error": 4039,
                     "success": False
-                })
+                }, status=status.HTTP_403_FORBIDDEN)
         except prompt_tb.DoesNotExist:
             return Response({
                 "error":4043,
                 "success": False
-            })
+            }, status=status.HTTP_404_NOT_FOUND)
     return Response({
         "responseDto": {
             "promptEvaluation": result,
