@@ -42,7 +42,7 @@ def prompt_eval(prompt, chat_data):
 def eval_comment(prompt, score):
     llm = ChatOpenAI(
         temperature=0.0,  # 창의성 (0.0 ~ 2.0)
-        max_tokens=2048,  # 최대 토큰수
+        max_tokens=4096,  # 최대 토큰수
         model_name='gpt-4o',  # 모델명
     )
     chain_prompt = PromptTemplate.from_template(eval_comment_template)

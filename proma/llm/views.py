@@ -65,7 +65,7 @@ def create_question(request):
                 }, status=status.HTTP_403_FORBIDDEN)
             history = get_history_tuple(chatroomId)
             if fileType == "image":
-                answer = llm_answer_his_img(prompt, messageQuestion, history, messageFile)
+                answer = llm_answer_his_img(prompt, messageQuestion, messageFile, history)
             elif fileType == "pdf":
                 answer = llm_answer_his_pdf(prompt, messageQuestion, messageFile, history)
             else:

@@ -70,7 +70,7 @@ def create_messages(
     ]
     return messages
 
-def llm_answer_his_img(prompt, messageQuestion, history, imageFile):
+def llm_answer_his_img(prompt, messageQuestion,  imageFile, history):
     llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
                      max_tokens=2048,  # 최대 토큰수
                      model_name='gpt-4o',  # 모델명
