@@ -3,7 +3,8 @@ Please answer as if you were the speaker and the user was the listener.
 Don't rely too much on history and prompt.
 Do not enter settings yourself that are not in the prompt.
 If it is correct to answer the user's question using a prompt, generate an answer using the prompt. If it is not correct, generate an answer corresponding to the user's question without using the prompt.
-If you want to emphasize with Markdown when answering in list format, include the numbers in Markdown symbols. Like **2.content**.
+If you want to emphasize numbers in Markdown when replying in list format, enclose the numbers in Markdown symbols, like **number.content**.
+Never use ** markdown after a number; instead, put the number inside ** markdown.
 """
 
 korean_template = """
@@ -164,16 +165,18 @@ Prompt: {prompt}
 
 Based on the provided prompt evaluate the quality of the output considering the following criteria:
 
-1. Coherence: How well-structured and logically organized is the response? Does it flow naturally from one idea to the next?
+1. Coherence(1-5): How well-structured and logically organized is the response? Does it flow naturally from one idea to the next?
     - Coherence Score: {Coherence}
-2. Consistency: Does the output remain factually accurate and align with the information presented in the prompt and user question? Are there any inconsistencies or errors?
+2. Consistency(1-5): Does the output remain factually accurate and align with the information presented in the prompt and user question? Are there any inconsistencies or errors?
     - Consistency Score: {Consistency}
-3. Fluency: How smooth and easy to understand is the response in terms of grammar, punctuation, and sentence structure? Does it feel natural to read?
+3. Fluency(1-3): How smooth and easy to understand is the response in terms of grammar, punctuation, and sentence structure? Does it feel natural to read?
     - Fluency Score: {Fluency}
-4. Relevance: Does the response stay focused on the key points, avoiding irrelevant details or redundancies?
+4. Relevance(1-5): Does the response stay focused on the key points, avoiding irrelevant details or redundancies?
     - Relevance Score: {Relevance}
 
-Provide a concise summary of the overall quality of the output, integrating your evaluations of coherence, consistency, fluency, and relevance.
+Provide a concise summary of the overall quality of the prompt, incorporating assessments of coherence, consistency, fluency, and relevance.
+Also include comments on how the prompt could be improved.
+Please answer in Korean, and keep your answer to 3 or 4 sentences, not too long.
 """
 
 image_desc_template = """

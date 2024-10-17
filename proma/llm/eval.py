@@ -2,7 +2,8 @@ from .template import (
     eval_coh_template,
     eval_con_template,
     eval_flu_template,
-    eval_rel_template
+    eval_rel_template,
+    eval_comment_template,
 )
 
 from langchain.chat_models import ChatOpenAI
@@ -37,6 +38,28 @@ def prompt_eval(prompt, chat_data):
         "Fluency": sum(score[2]) / len(score[2]),
         "Relevance": sum(score[3]) / len(score[3]),
     }
+
+def eval_comment(prompt, score):
+    llm = ChatOpenAI(
+        temperature=0.0,  # 창의성 (0.0 ~ 2.0)
+        max_tokens=2048,  # 최대 토큰수
+        model_name='gpt-4o',  # 모델명
+    )
+    chain_prompt = PromptTemplate.from_template(eval_comment_template)
+    chain = (
+            chain_prompt
+            | llm
+            | StrOutputParser()
+    )
+    comment = chain.invoke({
+        "prompt": prompt,
+        "Coherence": score["Coherence"],
+        "Consistency": score["Consistency"],
+        "Fluency": score["Fluency"],
+        "Relevance": score["Relevance"],
+    })
+    return comment
+
 
 def get_chat_data(promptId):
     chat_data = message_tb.objects.filter(prompt_id=promptId).values()
