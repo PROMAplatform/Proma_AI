@@ -122,7 +122,7 @@ def prompt_evaluation(request):
                 chat_data = get_chat_data(promptId)
                 if (len(chat_data) < 5):
                     return Response({
-                        "error": "Forbidden: Message Data Not Enough",
+                        "error": "채팅데이터가 충분하지 않습니다.",
                         "success": False
                     })
                 result = prompt_eval(prompt, chat_data)
