@@ -12,7 +12,7 @@ from .utils import (
     get_history_tuple,
     llm_answer_his
 )
-from .eval import prompt_eval, get_chat_data
+from .eval import prompt_eval, get_chat_data, eval_comment
 from .models import prompt_tb
 from .template import korean_template
 from users.models import user_tb, chatroom_tb
@@ -126,6 +126,7 @@ def prompt_evaluation(request):
                         "success": False
                     })
                 result = prompt_eval(prompt, chat_data)
+                comment = eval_comment(prompt, result)
             else:
                 return Response({
                     "error": 4039,
@@ -139,6 +140,7 @@ def prompt_evaluation(request):
     return Response({
         "responseDto": {
             "promptEvaluation": result,
+            "promptComment": comment,
             # "prompt": prompt,
             # "chat_data": chat_data,
         },
