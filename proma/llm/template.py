@@ -182,6 +182,7 @@ Please answer in Korean, and keep your answer to 3 or 4 sentences, not too long.
 image_desc_template = """
 Describe the information in this image in detail in natural language. 
 The more detailed the better, because you will have to look at the natural language information and process the answer.
+Never use the { symbol to explain something.
 """
 
 image_template = """
