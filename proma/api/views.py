@@ -22,7 +22,7 @@ def api_question(request):
         payload = find_payload(token, key)
         user = user_tb.objects.get(social_id=payload['id'])
         try:
-            chatroom = chatroom_tb.objects.get(chat_room_title=userLoginId)
+            chatroom = chatroom_tb.objects.get(chat_room_title=userLoginId, user_id=user.id)
             if chatroom.user.id != user.id:
                 data = {
                     "chat_room_title": userLoginId,
