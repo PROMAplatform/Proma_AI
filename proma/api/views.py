@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import QuestionSerializer, ChatroomSerilaizer, MessageSerializer, TestSerializer
 from llm.utils import find_payload, get_history_tuple, llm_answer_his
+from llm.multimodal.image import llm_answer_his_img
 from llm.models import prompt_tb
 from users.models import user_tb, chatroom_tb
 # Create your views here.
@@ -16,6 +17,8 @@ def api_question(request):
         key = serializer.data['secretKey']
         messageQuestion = serializer.data['messageQuestion']
         userLoginId = serializer.data['userLoginId']
+        messageFile = serializer.data['messageFile']
+        fileType = serializer.data['fileType']
         payload = find_payload(token, key)
         user = user_tb.objects.get(social_id=payload['id'])
         try:
@@ -40,11 +43,14 @@ def api_question(request):
             chatroom = chatroom_serializer.save()
         prompt = prompt_tb.objects.get(pk=payload['promptId']).prompt_preview
         history = get_history_tuple(chatroom.id)
-        answer = llm_answer_his(prompt, messageQuestion, history)
+        if fileType == "image":
+            answer = llm_answer_his_img(prompt, messageQuestion, messageFile, history)
+        else:
+            answer = llm_answer_his(prompt, messageQuestion, history)
         data = {
             "prompt": payload['promptId'],
             "message_answer": answer,
-            "message_file": "",
+            "message_file": messageFile,
             "message_question": messageQuestion,
             "chatroom": chatroom.id,
         }
