@@ -28,6 +28,22 @@ def llm_answer_his(prompt, messageQuestion, history):
     )
     return conversation.invoke(messageQuestion)["response"]
 
+def llm_one_answer(prompt, messageQuestion):
+    llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
+                     max_tokens=2048,  # 최대 토큰수
+                     model_name='gpt-4o',  # 모델명
+                     )
+    memory = ConversationBufferMemory()
+    system_message = SystemMessage(content=implicit_template + prompt)
+    human_message = HumanMessagePromptTemplate.from_template("current content: {history}, <question>:{input}")
+    user_prompt = ChatPromptTemplate(messages=[system_message, human_message])
+    conversation = ConversationChain(
+        prompt=user_prompt,
+        llm=llm,
+        memory=memory,
+    )
+    return conversation.invoke(messageQuestion)["response"]
+
 def get_history_tuple(room):
     try:
         chat_data = message_tb.objects.filter(chatroom_id=room).values()

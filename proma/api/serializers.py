@@ -10,6 +10,12 @@ class QuestionSerializer(serializers.Serializer):
     fileType = serializers.CharField(max_length=128, allow_blank=True)
     messageFile = serializers.CharField(max_length=512, allow_blank=True)
 
+class QuestionSerializer(serializers.Serializer):
+    userLoginId = serializers.CharField(max_length=1024)
+    apiToken = serializers.CharField(max_length=1024)
+    secretKey = serializers.CharField(max_length=1024)
+    messageQuestion = serializers.CharField(max_length=1024)
+
 class TestSerializer(serializers.Serializer):
     promptId = serializers.IntegerField(allow_null=True, required=False)
     chatroomId = serializers.IntegerField(allow_null=True)
