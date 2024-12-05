@@ -10,7 +10,7 @@ class QuestionSerializer(serializers.Serializer):
     fileType = serializers.CharField(max_length=128, allow_blank=True)
     messageFile = serializers.CharField(max_length=512, allow_blank=True)
 
-class QuestionSerializer(serializers.Serializer):
+class oneQuestionSerializer(serializers.Serializer):
     userLoginId = serializers.CharField(max_length=1024)
     apiToken = serializers.CharField(max_length=1024)
     secretKey = serializers.CharField(max_length=1024)

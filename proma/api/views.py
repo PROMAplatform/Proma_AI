@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import QuestionSerializer, ChatroomSerilaizer, MessageSerializer, TestSerializer
+from .serializers import QuestionSerializer, ChatroomSerilaizer, MessageSerializer, TestSerializer, oneQuestionSerializer
 from llm.utils import find_payload, get_history_tuple, llm_answer_his, llm_one_answer
 from llm.multimodal.image import llm_answer_his_img
 from llm.models import prompt_tb
@@ -76,7 +76,7 @@ def api_test(request):
 
 @api_view(['POST'])
 def api_one_question(request):
-    serializer = QuestionSerializer(data=request.data)
+    serializer = oneQuestionSerializer(data=request.data)
     if serializer.is_valid():
         token = serializer.data['apiToken']
         key = serializer.data['secretKey']
