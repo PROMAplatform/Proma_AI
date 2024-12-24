@@ -1,4 +1,4 @@
-implicit_template = """
+default_template = """
 Please answer as if you were the speaker and the user was the listener.
 Don't rely too much on history and prompt.
 Do not enter settings yourself that are not in the prompt.
@@ -182,11 +182,12 @@ Please answer in Korean, and keep your answer to 3 or 4 sentences, not too long.
 image_desc_template = """
 Describe the information in this image in detail in natural language. 
 The more detailed the better, because you will have to look at the natural language information and process the answer.
-Never use the { symbol to explain something.
+!!!! Never use the '{' symbol. Use the '(' symbol instead. !!!!
 """
 
 image_template = """
 The user has now entered a question along with an image. 
-I will provide information about the image in natural language, so please refer to this and answer.
+1. I will provide information about the image in natural language, so please refer to this and answer.
+2. The user did not enter a description for the image, but rather an image, so please answer as if the user had entered an image.
 image description:
 """

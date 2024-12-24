@@ -6,7 +6,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain_core.messages import SystemMessage
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
-from ..template import implicit_template, image_template, image_desc_template
+from ..template import default_template, image_template, image_desc_template
 
 def encode_image_from_url(url):
     response = requests.get(url)
@@ -70,7 +70,17 @@ def create_messages(
     ]
     return messages
 
-def llm_answer_his_img(prompt, messageQuestion,  imageFile, history):
+def llm_answer_his_img(prompt, messageQuestion, imageFile, history):
+    '''
+    이미지 기반 답변 생성 함수
+    입력:
+        - prompt: 사용자가 입력한 프롬프트의 내용, (string)
+        - messageQuestion: 사용자가 입력한 질문의 내용, (string)
+        - imageFile: 사용자가 입력한 이미지 파일의 경로, (string)
+        - history: 사용자와 대회한 기록, (tuple)
+    반환:
+        - 생성한 답변(string)
+    '''
     llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
                      max_tokens=2048,  # 최대 토큰수
                      model_name='gpt-4o',  # 모델명
@@ -80,9 +90,9 @@ def llm_answer_his_img(prompt, messageQuestion,  imageFile, history):
         memory.save_context({"input": i["input"]},
                             {"outputs": i["outputs"]})
 
-    message = create_messages(imageFile, image_desc_template, "please describe this image")
+    message = create_messages(imageFile, image_desc_template, "please describe this image")     # 이미지 캡션 생성
     image_description = llm.invoke(message).content
-    system_message = SystemMessage(content=implicit_template + prompt)
+    system_message = SystemMessage(content=default_template + prompt)
     human_message = HumanMessagePromptTemplate.from_template(image_template + image_description + "current content: {history}, <question>:{input}")
     user_prompt = ChatPromptTemplate(messages=[system_message, human_message])
 

@@ -6,10 +6,19 @@ from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
 import base64
 from .models import message_tb
-from .template import implicit_template
+from .template import default_template
 import jwt
 
 def llm_answer_his(prompt, messageQuestion, history):
+    '''
+    기본 답변 생성 함수
+    입력:
+        - prompt: 사용자가 입력한 프롬프트의 내용, (string)
+        - messageQuestion: 사용자가 입력한 질문의 내용, (string)
+        - history: 사용자와 대회한 기록, (tuple)
+    반환:
+        - 생성한 답변(string)
+    '''
     llm = ChatOpenAI(temperature=0.0,  # 창의성 (0.0 ~ 2.0)
                      max_tokens=2048,  # 최대 토큰수
                      model_name='gpt-4o',  # 모델명
@@ -17,8 +26,8 @@ def llm_answer_his(prompt, messageQuestion, history):
     memory = ConversationBufferMemory()
     for i in history:
         memory.save_context({"input": i["input"]},
-                            {"outputs": i["outputs"]})
-    system_message = SystemMessage(content=implicit_template + prompt)
+                            {"outputs": i["outputs"]})      # history to memory
+    system_message = SystemMessage(content=default_template + prompt)  # default prompt template + user's prompt
     human_message = HumanMessagePromptTemplate.from_template("current content: {history}, <question>:{input}")
     user_prompt = ChatPromptTemplate(messages=[system_message, human_message])
     conversation = ConversationChain(
@@ -34,7 +43,7 @@ def llm_one_answer(prompt, messageQuestion):
                      model_name='gpt-4o',  # 모델명
                      )
     memory = ConversationBufferMemory()
-    system_message = SystemMessage(content=implicit_template + prompt)
+    system_message = SystemMessage(content=default_template + prompt)
     human_message = HumanMessagePromptTemplate.from_template("current content: {history}, <question>:{input}")
     user_prompt = ChatPromptTemplate(messages=[system_message, human_message])
     conversation = ConversationChain(

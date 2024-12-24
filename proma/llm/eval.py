@@ -16,7 +16,12 @@ def prompt_eval(prompt, chat_data):
                      max_tokens=4096,  # 최대 토큰수
                      model_name='gpt-4o',  # 모델명
                      )
-    eval_prompt = [eval_coh_template, eval_con_template, eval_flu_template, eval_rel_template]
+    eval_prompt = [
+        eval_coh_template,  # 연결성 평가 요소 프롬프트
+        eval_con_template,  # 일관성 평가 요소 프롬프트
+        eval_flu_template,  # 유창성 평가 요소 프롬프트
+        eval_rel_template  # 관련성 평가 요소 프롬프트
+    ]
     score = [[], [], [], []]
     for i in range(len(chat_data)):
         for j in range(4):
