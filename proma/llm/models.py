@@ -66,3 +66,14 @@ class message_tb(models.Model):
     message_answer = models.TextField()
     class Meta:
         db_table = 'message_tb'
+
+class prompt_method_tb(models.Model):
+    id = models.AutoField(primary_key=True)
+    prompt_method = models.ForeignKey(prompt_type_tb, on_delete=models.CASCADE)
+
+class block_history_tb(models.Model):
+    id = models.AutoField(primary_key=True)
+    history = models.TextField()
+    user = models.ForeignKey(user_tb, on_delete=models.CASCADE)
+    prompt_category = models.CharField(max_length=256)
+    prompt_method = models.CharField(max_length=256)
