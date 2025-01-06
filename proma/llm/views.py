@@ -1,7 +1,8 @@
+import json
 from .serializers import (
     PromptSerializer,
     EvalSerializer,
-    MessageSerializer
+    MessageSerializer, RecommendSerializer
 )
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -10,7 +11,7 @@ from .utils import (
     find_payload,
     fallback_response,
     get_history_tuple,
-    llm_answer_his
+    llm_answer_his, get_block_history_tuple, llm_answer_block_history
 )
 from .eval import prompt_eval, get_chat_data, eval_comment
 from .models import prompt_tb
@@ -147,3 +148,82 @@ def prompt_evaluation(request):
         "error": None,
         "success": True
     }, status=status.HTTP_200_OK)
+
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+
+
+@api_view(['GET'])
+def block_recommendation(request):
+    serializer = RecommendSerializer(data=request.data)
+    token = request.headers.get('Authorization')
+    language = request.headers.get('Accept-Language')
+
+    if token is None:
+        return Response({
+            "error": 4046,
+            "success": False
+        }, status=status.HTTP_404_NOT_FOUND)
+
+    if serializer.is_valid():
+        token_id = find_payload(token, JWT_SECRET_KEY)['id']
+        user = user_tb.objects.get(social_id=token_id)
+        prompt_method = request.GET.get("promptMethod", "TASK/RESEARCH")
+        prompt_category = request.GET.get("promptCategory", "IT")
+        history = get_block_history_tuple(user.id, prompt_method, prompt_category)
+        answer = llm_answer_block_history(prompt_method, prompt_category, history)
+
+
+
+        if len(answer) < 3:
+            answer = fallback_response(language)
+        data = json.loads(answer)
+        formatted_data = [
+            {
+                "blockCategory": item['blockCategory'],
+                "blockValue": item['blockValue'],
+                "blockDescription": item['blockDescription']
+            }
+            for item in data
+        ]
+        print(formatted_data)
+
+        return Response({
+            "responseDto": {
+                'selectBlock': formatted_data
+            }
+        })
+
+        # return Response({
+        #     "responseDto": {
+        #         "messageAnswer": answer,
+        #     },
+        #     "error": None,
+        #     "success": True
+        # }, status=status.HTTP_200_OK)
+    else:
+        # serializer가 유효하지 않을 때의 처리
+        return Response({
+            "error": "Invalid input data",
+            "success": False
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+        # data = {
+        #     "prompt": promptId,
+        #     "message_answer": answer,
+        #     "message_file": messageFile,
+        #     "message_question": messageQuestion,
+        #     "chatroom": chatroomId,
+        # }
+        # message_serializer = MessageSerializer(data=data)
+        # message_serializer.is_valid(raise_exception=True)
+        # message_serializer.save()
+        # return Response({
+        #     "responseDto": {
+        #         "messageAnswer": answer,
+        #     },
+        #     "error": None,
+        #     "success": True
+        # }, status=status.HTTP_200_OK)
