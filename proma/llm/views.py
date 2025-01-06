@@ -1,3 +1,4 @@
+import json
 from .serializers import (
     PromptSerializer,
     EvalSerializer,
@@ -154,7 +155,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 
-@api_view(['POST'])
+@api_view(['GET'])
 def block_recommendation(request):
     serializer = RecommendSerializer(data=request.data)
     token = request.headers.get('Authorization')
@@ -169,22 +170,39 @@ def block_recommendation(request):
     if serializer.is_valid():
         token_id = find_payload(token, JWT_SECRET_KEY)['id']
         user = user_tb.objects.get(social_id=token_id)
-        prompt_method = serializer.data['promptMethodId']
-        prompt_category = serializer.data['promptCategory']
+        prompt_method = request.GET.get("promptMethod", "TASK/RESEARCH")
+        prompt_category = request.GET.get("promptCategory", "IT")
         history = get_block_history_tuple(user.id, prompt_method, prompt_category)
         answer = llm_answer_block_history(prompt_method, prompt_category, history)
 
+
+
         if len(answer) < 3:
             answer = fallback_response(language)
+        data = json.loads(answer)
+        formatted_data = [
+            {
+                "blockCategory": item['blockCategory'],
+                "blockValue": item['blockValue'],
+                "blockDescription": item['blockDescription']
+            }
+            for item in data
+        ]
+        print(formatted_data)
 
-        print(answer)
         return Response({
             "responseDto": {
-                "messageAnswer": answer,
-            },
-            "error": None,
-            "success": True
-        }, status=status.HTTP_200_OK)
+                'selectBlock': formatted_data
+            }
+        })
+
+        # return Response({
+        #     "responseDto": {
+        #         "messageAnswer": answer,
+        #     },
+        #     "error": None,
+        #     "success": True
+        # }, status=status.HTTP_200_OK)
     else:
         # serializer가 유효하지 않을 때의 처리
         return Response({
