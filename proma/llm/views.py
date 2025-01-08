@@ -173,6 +173,7 @@ def block_recommendation(request):
         prompt_method = request.GET.get("promptMethod", "TASK/RESEARCH")
         prompt_category = request.GET.get("promptCategory", "IT")
         history = get_block_history_tuple(user.id, prompt_method, prompt_category)
+        print(history)
         answer = llm_answer_block_history(prompt_method, prompt_category, history)
 
 
@@ -188,7 +189,6 @@ def block_recommendation(request):
             }
             for item in data
         ]
-        print(formatted_data)
 
         return Response({
             "responseDto": {
