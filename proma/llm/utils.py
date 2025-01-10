@@ -85,7 +85,7 @@ def get_history_tuple(room):
 
 def get_block_history_tuple(user, promptMethod, promptCateory):
     try:
-        block_history_data = block_history_tb.objects.filter(user=user, prompt_category=promptCateory, prompt_method=promptMethod).values()
+        block_history_data = block_history_tb.objects.filter(user=user, prompt_category=promptCateory).values()
         block_history = []
         if (len(block_history_data) == 0):
             return ""
