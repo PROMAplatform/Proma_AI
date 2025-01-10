@@ -41,9 +41,10 @@ def llm_answer_block_history(prompt_method, prompt_category, history):
                      max_tokens=2048,
                      model_name='gpt-4o-mini',
                      )
+    #memory = ConversationBufferMemory(input_key="type", memory_key="history")
     memory = ConversationBufferMemory()
-    for i in history:
-        memory.save_context({"type": i["type"]})
+    for item in history:
+        memory.save_context({"type": item["type"]}, {"outputs": ""})
     system_message = SystemMessage(content=recommend_default_template)
     human_message = HumanMessagePromptTemplate.from_template("current content: {history}, <question>:{input}")
     user_prompt = ChatPromptTemplate(messages=[system_message, human_message])
