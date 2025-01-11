@@ -102,7 +102,7 @@ def generate_interview(request):
         room_interview_serializer.save()
         return Response({
             "responseDto": {
-                "chatContent": answer,
+                "answer": answer,
             },
             "error": None,
             "success": True
