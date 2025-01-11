@@ -72,7 +72,6 @@ def generate_introduce(request):
         return Response({
             "responseDto": {
                 "chatContent": answer,
-                "liar": room.liar_character.id,
             },
             "error": None,
             "success": True
