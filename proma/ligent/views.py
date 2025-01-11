@@ -47,7 +47,7 @@ def generate_introduce(request):
         category = category_tb.objects.get(pk=keyword.category.id)
         character = character_tb.objects.get(pk=character_id)
         personality = personalities_tb.objects.get(character=character_id)
-        if character_id == room.liar_character_id:
+        if character_id == room.liar_character.id:
             is_liar = True
         else:
             is_liar = False
@@ -72,6 +72,7 @@ def generate_introduce(request):
         return Response({
             "responseDto": {
                 "chatContent": answer,
+                "liar": room.liar_character.id,
             },
             "error": None,
             "success": True
@@ -101,7 +102,7 @@ def generate_interview(request):
         category = category_tb.objects.get(pk=keyword.category.id)
         character = character_tb.objects.get(pk=character_id)
         personality = personalities_tb.objects.get(character_id=character_id)
-        if character_id == room.liar_character_id:
+        if character_id == room.liar_character.id:
             is_liar = True
         else:
             is_liar = False

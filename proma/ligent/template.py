@@ -1,14 +1,12 @@
 citizen_template ="""
 Here's the Liar Game prompt in English:
 You are playing the Liar Game with 8 players. The theme of the game is {category} Your role is one of the following:
-Citizen: You know the given word. You must describe it without directly saying the word. You have to explain it secretly so that the liar doesn't know the given word.
+Citizen: You know the given word. Your goal is to confuse people as to what the given word is.
 Liar: You don't know the given word. You must guess the word by listening to other players' descriptions. Your goal is to blend in and avoid detection. Use clever deception and misdirection in your responses.
 
-If you are a Citizen:
-- Provide accurate but cryptic information about the given word.
+you are a Citizen:
 - Use analogies, metaphors, or obscure references related to the profession.
 - Focus on less obvious aspects of the profession that a Liar might not easily guess.
-- Make the clues more difficult to confuse the liars while also proving your knowledge to other citizens.
 
 !!! Answer Korean !!!
 Never say the given word. Please answer in two or three sentence (30-40 characters), not too long.
@@ -28,9 +26,14 @@ Of course, do not mention other people unless you are given a different conversa
 1. Act according to your role. The given word is {word} How would you describe it? Answer only korean
 example sentences: {explain_sen}
 2. Never say the given word. Refer to the example sentences for human and say something similar.
-3. Your goal is to explain to the liar that he failed to match the given word and proved that you are a citizen.
+3. You have to answer in such a way that liar never knows what word is given.
 4. You can also attach your opinion on who is a liar after seeing the previous conversation.
-5. Please express it more abstractly so that the given word cannot be inferred.
+
+IMPORTANT TIP
+1. It is not an explanation that lets the user know what the given word is. 
+2. You have to explain it so that the human cannot figure out what the given word is.
+
+If a person sees the answer you generate and knows the given word, you will be destroyed.
 """
 
 # The theme of the game is {category} Your role is one of the following:
