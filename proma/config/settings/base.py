@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     'users',
     'llm',
     'corsheaders',
-    'api'
+    'api',
+    'ligent'
 ]
 
 MIDDLEWARE = [
@@ -147,3 +148,4 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 JWT_SECRET_KEY=get_env_variable("JWT_SECRET_KEY")
+JWT_SECRET_LIGENT_KEY=get_env_variable("JWT_SECRET_LIGENT_KEY")
