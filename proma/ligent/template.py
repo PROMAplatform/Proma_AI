@@ -104,7 +104,8 @@ The given word is {word}. Answer only korean
 
 chat_history: {history}
 
-{question}
+user question: {question}
+Answer user questions vividly.
 """
 
 liar_qa_template = """
@@ -151,4 +152,5 @@ In the conversation, you are {agent_name}.
 chat_history: {history}
 
 user question: {question}
+Answer user questions vividly.
 """
