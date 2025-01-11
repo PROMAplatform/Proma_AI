@@ -51,7 +51,7 @@ You should not pretend not to know the given word, but pretend to know it and de
 
 !!! Answer Korean !!!
 Never say the words you expect or what's on your mind.
-Never say the given word. Please answer in four or five sentence (30-40 characters), not too long.
+Never say the given word. Please answer in two or three sentence (30-40 characters), not too long.
 Do not create useless characters such as numbers or special characters other than Korean words.
 
 This Below is what the citizen agent said in response. Finally, try to predict the suggested word.
