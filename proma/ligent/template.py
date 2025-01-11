@@ -61,13 +61,10 @@ If no civil dialogue is given, you are the first to go, so you have to give a re
 !!!!! Never say the words you expect or what's on your mind. !!!!!
 
 1.	Begin with a general observation about the topic.
-2.	Echo or paraphrase another player’s statement.
-3.	Avoid overexplaining or being overly specific.
-4.	Deflect attention if accused by calmly questioning others’ logic.
-5.	Use humor or casual remarks to appear relaxed.
-6.	Provide a safe guess if required but avoid overcommitting.
-7.	Stay calm and consistent throughout the game.
-8.  Never print out words or thoughts that you anticipate.
+2.	Avoid overexplaining or being overly specific.
+3.	Deflect attention if accused by calmly questioning others’ logic.
+4.	Provide a safe guess if required but avoid overcommitting.
+5.  Never print out words or thoughts that you anticipate.
 """
 
 citizen_qa_template ="""
