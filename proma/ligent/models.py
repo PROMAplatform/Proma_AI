@@ -47,9 +47,10 @@ class keyword_tb(models.Model):
 
 class room_tb(models.Model):
     id = models.BigAutoField(primary_key=True)
-    is_success = models.BooleanField()
+    is_success = models.BinaryField()
     round = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
+    question_count = models.IntegerField()
     keyword = models.ForeignKey(keyword_tb, on_delete=models.CASCADE)
     user = models.ForeignKey(user_tb, on_delete=models.CASCADE)
     liar_character = models.ForeignKey(character_tb, on_delete=models.CASCADE)

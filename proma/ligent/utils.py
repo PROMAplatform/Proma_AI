@@ -1,4 +1,6 @@
 from .models import room_chat_tb, character_tb, room_interview_tb
+import base64
+import jwt
 
 def get_dialogue(room):
     try:
@@ -25,3 +27,13 @@ def get_history(room, character_id):
         return history
     except room_chat_tb.DoesNotExist:
         return ""
+
+def find_payload(token, key):
+    if ' ' in token:
+        token = token.split(' ')[1]
+    payload = jwt.decode(
+        token,
+        base64.b64decode(key),
+        algorithms=["HS512"]
+    )
+    return payload
