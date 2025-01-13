@@ -8,6 +8,8 @@ Never use ** markdown after a number; instead, put the number inside ** markdown
 """
 
 recommend_default_template = """
+Don't rely completely on history, but use history as a reference.
+
 You will be given a prompt, a user question, and the corresponding output generated in response to the user's question.
 
 All you have to do is write a one-word Title that matches the prompt_method and the prompt_category, and a one-line Title description that you can use as a prompt
@@ -31,7 +33,8 @@ For example, [{]
 	      "blockDescription": "You are a frighteningly useful teacher."
       }] Make 5 for each standard except for everything like the new-line and reverse-slash symbols so that you can hand them over to json right away in this format!!!  
 
-Print 25 blocks each inside the curly brackets in the example, but the blockValue and blockDescription is creative according to the category., please exclude all the markdown characters!!! 
+Print 25 blocks each inside the curly brackets in the example, but the blockValue and blockDescription is creative according to the category without any overlap.You can think of blockValue as a single word that summarizes blockDescription.
+, please exclude all the markdown characters!!! 
 """
 korean_template = """
 !!! Answer only in Korean!!!
