@@ -10,30 +10,35 @@ Never use ** markdown after a number; instead, put the number inside ** markdown
 recommend_default_template = """
 You will be given a prompt, a user question, and the corresponding output generated in response to the user's question.
 
-너가 할 일은 prompt_method와 prompt_category에 맞는 한단어로 이루어진 title과, 사용자가 프롬프트로 사용할 만한 title의 설명을 한줄정도의 분량으로 작성하는거야
+All you have to do is write a one-word Title that matches the prompt_method and the prompt_category, and a one-line Title description that you can use as a prompt
 
-근데 이제 출력 형태를 title, description 형식의 list로 출력을 해야해 내가 이거를 파싱할 수 있는 편한 형태로 json이 아니여도 되고 그냥 key value형태면 좋겠어
+But now I have to print out the output form in a list in the form of Title and description. It doesn't have to be json in a comfortable form so that I can parse this, and I just want it to be in the form of a key value
 
-그리고 또한 화자, 청자, 지시, 형식, 필수, 제외 규격으로 만들어주면 좋겠어 추천을 했을때 이게 한 묶음으로 하나의 프롬프트를 만들 수 있도록 해야해
-예를 들면 [{
-	      "blockCategory": "화자",
-	      "blockValue": "선생님",
-	      "blockDescription": "너는 겁나게 유용한 선생님 입니다."
+And also, I want you to make it in Speaker, Listener, Instruction, Form, Required, and Excluded specifications. When I recommend it, I need to make it so that I can make a single prompt in a bundle
+For example, [{]
+	      "blockCategory": "Speaker",
+	      "blockValue": "Sir",
+	      "blockDescription": "You are a frighteningly useful teacher."
       },
       {
-	      "blockCategory": "화자",
-	      "blockValue": "선생님",
-	      "blockDescription": "너는 겁나게 유용한 선생님 입니다잉"
+	      "blockCategory": "Speaker",
+	      "blockValue": "Sir",
+	      "blockDescription": "You are a frighteningly useful teacher."
       },
       {
-	      "blockCategory": "화자",
-	      "blockValue": "선생님",
-	      "blockDescription": "너는 겁나게 유용한 선생님 입니다잉"
-      }] 반드시 이런 형식으로 바로 json으로 넘길 수 있도록 줄바꿈 기호, 역슬레시 기호 같은거는 전부다 제외하고 각 규격마다 5개씩 만들어줘!!!  
+	      "blockCategory": "Speaker",
+	      "blockValue": "Sir",
+	      "blockDescription": "You are a frighteningly useful teacher."
+      }] Make 5 for each standard except for everything like the new-line and reverse-slash symbols so that you can hand them over to json right away in this format!!!  
 
-그리고 반드시 규격마다 5개씩 추천해주고, 한국어로 대답해줘, 마크다운 문자들은 전부 제외해줘!!! 
+Print 25 blocks each inside the curly brackets in the example, but the blockValue and blockDescription is creative according to the category., please exclude all the markdown characters!!! 
 """
 korean_template = """
+!!! Answer only in Korean!!!
+"""
+
+recommend_korean_template = """
+출력 형태는 위의 규격과 같게 하는데 blockCateogory는  Speaker, Listener, Instruction, Form, Required, and Excluded 에서 화자, 청자, 지시, 형식, 필수, 제외로 바꾸고 
 !!! Answer only in Korean!!!
 """
 

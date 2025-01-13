@@ -5,7 +5,7 @@ from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
 import base64
 from .models import message_tb, block_history_tb
-from .template import default_template, recommend_default_template
+from .template import default_template, recommend_default_template, recommend_korean_template
 import jwt
 
 def llm_answer_his(prompt, messageQuestion, history):
@@ -36,7 +36,7 @@ def llm_answer_his(prompt, messageQuestion, history):
     )
     return conversation.invoke(messageQuestion)["response"]
 
-def llm_answer_block_history(prompt_method, prompt_category, history):
+def llm_answer_block_history(prompt_method, prompt_category, history, language):
     llm = ChatOpenAI(temperature=0.0,
                      max_tokens=2048,
                      model_name='gpt-4o-mini',
@@ -45,7 +45,10 @@ def llm_answer_block_history(prompt_method, prompt_category, history):
     memory = ConversationBufferMemory()
     for item in history:
         memory.save_context({"type": item["type"]}, {"outputs": ""})
-    system_message = SystemMessage(content=recommend_default_template)
+    if(language == "en"):
+        system_message = SystemMessage(content=recommend_default_template)
+    else:
+        system_message = SystemMessage(content=recommend_default_template + recommend_korean_template)
     human_message = HumanMessagePromptTemplate.from_template("current content: {history}, <question>:{input}")
     user_prompt = ChatPromptTemplate(messages=[system_message, human_message])
     conversation = ConversationChain(

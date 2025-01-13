@@ -172,11 +172,12 @@ def block_recommendation(request):
         user = user_tb.objects.get(social_id=token_id)
         prompt_method = request.GET.get("promptMethod", "TASK/RESEARCH")
         prompt_category = request.GET.get("promptCategory", "IT")
+        language = request.headers.get('Accept-Language')
         history = get_block_history_tuple(user.id, prompt_method, prompt_category)
         print(history)
-        answer = llm_answer_block_history(prompt_method, prompt_category, history)
+        answer = llm_answer_block_history(prompt_method, prompt_category, history, language )
 
-
+        print(answer)
 
         if len(answer) < 3:
             answer = fallback_response(language)
