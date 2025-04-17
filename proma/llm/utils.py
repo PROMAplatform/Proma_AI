@@ -49,6 +49,7 @@ def llm_answer_block_history(prompt_method, prompt_category, history, language):
         system_message = SystemMessage(content=recommend_default_template)
     else:
         system_message = SystemMessage(content=recommend_default_template + recommend_korean_template)
+
     human_message = HumanMessagePromptTemplate.from_template("current content: {history}, <question>:{input}")
     user_prompt = ChatPromptTemplate(messages=[system_message, human_message])
     conversation = ConversationChain(

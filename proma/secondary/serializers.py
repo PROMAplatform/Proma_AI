@@ -1,24 +1,24 @@
 from rest_framework import serializers
 
 class BlockRecommendRequestSerializer(serializers.Serializer):
-    타입 = serializers.CharField(required=False, allow_blank=True, default='')
-    카테고리 = serializers.CharField(required=False, allow_blank=True, default='')
-    화자 = serializers.CharField(required=False, allow_blank=True, default='')
-    청자 = serializers.CharField(required=False, allow_blank=True, default='')
-    지시 = serializers.CharField(required=False, allow_blank=True, default='')
-    형식 = serializers.CharField(required=False, allow_blank=True, default='')
-    제외 = serializers.CharField(required=False, allow_blank=True, default='')
-    필수 = serializers.CharField(required=False, allow_blank=True, default='')
+    type = serializers.CharField(required=False, allow_blank=True, default='')
+    category = serializers.CharField(required=False, allow_blank=True, default='')
+    speaker = serializers.CharField(required=False, allow_blank=True, default='')
+    listener = serializers.CharField(required=False, allow_blank=True, default='')
+    instruction = serializers.CharField(required=False, allow_blank=True, default='')
+    form = serializers.CharField(required=False, allow_blank=True, default='')
+    excluded = serializers.CharField(required=False, allow_blank=True, default='')
+    required = serializers.CharField(required=False, allow_blank=True, default='')
 
 class RecordSerializer(serializers.Serializer):
-    타입 = serializers.CharField(allow_blank=True, default='')
-    카테고리 = serializers.CharField(allow_blank=True, default='')
-    화자 = serializers.CharField(allow_blank=True, default='')
-    청자 = serializers.CharField(allow_blank=True, default='')
-    지시 = serializers.CharField(allow_blank=True, default='')
-    형식 = serializers.CharField(allow_blank=True, default='')
-    제외 = serializers.CharField(allow_blank=True, default='')
-    필수 = serializers.CharField(allow_blank=True, default='')
+    type = serializers.CharField(allow_blank=True, default='')
+    category = serializers.CharField(allow_blank=True, default='')
+    speaker = serializers.CharField(allow_blank=True, default='')
+    listener = serializers.CharField(allow_blank=True, default='')
+    instruction = serializers.CharField(allow_blank=True, default='')
+    form = serializers.CharField(allow_blank=True, default='')
+    excluded = serializers.CharField(allow_blank=True, default='')
+    required = serializers.CharField(allow_blank=True, default='')
 
     def to_representation(self, instance):
         # None 값을 빈 문자열로 변환

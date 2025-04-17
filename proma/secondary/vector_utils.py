@@ -70,22 +70,22 @@ def save_to_embed_tb(keyword_embeddings):
 def save_to_pca_tb(record, vector_record):
     # 벡터와 원본 값을 함께 저장
     block_history_log_pca_tb.objects.create(
-        v_type=vector_record.get('타입', [0, 0, 0]).tolist() if hasattr(vector_record.get('타입', [0, 0, 0]), 'tolist') else vector_record.get('타입', [0, 0, 0]),
-        v_category=vector_record.get('카테고리', [0, 0, 0]).tolist() if hasattr(vector_record.get('카테고리', [0, 0, 0]), 'tolist') else vector_record.get('카테고리', [0, 0, 0]),
-        v_speaker=vector_record.get('화자', [0, 0, 0]).tolist() if hasattr(vector_record.get('화자', [0, 0, 0]), 'tolist') else vector_record.get('화자', [0, 0, 0]),
-        v_listener=vector_record.get('청자', [0, 0, 0]).tolist() if hasattr(vector_record.get('청자', [0, 0, 0]), 'tolist') else vector_record.get('청자', [0, 0, 0]),
-        v_instruction=vector_record.get('지시', [0, 0, 0]).tolist() if hasattr(vector_record.get('지시', [0, 0, 0]), 'tolist') else vector_record.get('지시', [0, 0, 0]),
-        v_form=vector_record.get('형식', [0, 0, 0]).tolist() if hasattr(vector_record.get('형식', [0, 0, 0]), 'tolist') else vector_record.get('형식', [0, 0, 0]),
-        v_excluded=vector_record.get('제외', [0, 0, 0]).tolist() if hasattr(vector_record.get('제외', [0, 0, 0]), 'tolist') else vector_record.get('제외', [0, 0, 0]),
-        v_required=vector_record.get('필수', [0, 0, 0]).tolist() if hasattr(vector_record.get('필수', [0, 0, 0]), 'tolist') else vector_record.get('필수', [0, 0, 0]),
-        o_type=record.get('타입', ''),
-        o_category=record.get('카테고리', ''),
-        o_speaker=record.get('화자', ''),
-        o_listener=record.get('청자', ''),
-        o_instruction=record.get('지시', ''),
-        o_form=record.get('형식', ''),
-        o_excluded=record.get('제외', ''),
-        o_required=record.get('필수', '')
+        v_type=vector_record.get('type', [0, 0, 0]).tolist() if hasattr(vector_record.get('type', [0, 0, 0]), 'tolist') else vector_record.get('type', [0, 0, 0]),
+        v_category=vector_record.get('category', [0, 0, 0]).tolist() if hasattr(vector_record.get('category', [0, 0, 0]), 'tolist') else vector_record.get('category', [0, 0, 0]),
+        v_speaker=vector_record.get('speaker', [0, 0, 0]).tolist() if hasattr(vector_record.get('speaker', [0, 0, 0]), 'tolist') else vector_record.get('speaker', [0, 0, 0]),
+        v_listener=vector_record.get('listener', [0, 0, 0]).tolist() if hasattr(vector_record.get('listener', [0, 0, 0]), 'tolist') else vector_record.get('listener', [0, 0, 0]),
+        v_instruction=vector_record.get('instruction', [0, 0, 0]).tolist() if hasattr(vector_record.get('Instruction', [0, 0, 0]), 'tolist') else vector_record.get('Instruction', [0, 0, 0]),
+        v_form=vector_record.get('form', [0, 0, 0]).tolist() if hasattr(vector_record.get('form', [0, 0, 0]), 'tolist') else vector_record.get('form', [0, 0, 0]),
+        v_excluded=vector_record.get('excluded', [0, 0, 0]).tolist() if hasattr(vector_record.get('excluded', [0, 0, 0]), 'tolist') else vector_record.get('excluded', [0, 0, 0]),
+        v_required=vector_record.get('required', [0, 0, 0]).tolist() if hasattr(vector_record.get('required', [0, 0, 0]), 'tolist') else vector_record.get('required', [0, 0, 0]),
+        o_type=record.get('type', ''),
+        o_category=record.get('category', ''),
+        o_speaker=record.get('speaker', ''),
+        o_listener=record.get('listener', ''),
+        o_instruction=record.get('Instruction', ''),
+        o_form=record.get('form', ''),
+        o_excluded=record.get('excluded', ''),
+        o_required=record.get('required', '')
     )
 
 def load_from_embed_tb():
@@ -110,26 +110,26 @@ def load_from_pca_tb():
     for record in records:
         # 원본 레코드 구성
         original_record = {
-            '타입': record.o_type,
-            '카테고리': record.o_category,
-            '화자': record.o_speaker,
-            '청자': record.o_listener,
-            '지시': record.o_instruction,
-            '형식': record.o_form,
-            '제외': record.o_excluded,
-            '필수': record.o_required
+            'type': record.o_type,
+            'category': record.o_category,
+            'speaker': record.o_speaker,
+            'listener': record.o_listener,
+            'Instruction': record.o_instruction,
+            'form': record.o_form,
+            'excluded': record.o_excluded,
+            'required': record.o_required
         }
         
         # 벡터 레코드 구성 - VectorField에서 가져온 값을 numpy 배열로 변환
         vector_record = {
-            '타입': np.array(record.v_type),
-            '카테고리': np.array(record.v_category),
-            '화자': np.array(record.v_speaker),
-            '청자': np.array(record.v_listener),
-            '지시': np.array(record.v_instruction),
-            '형식': np.array(record.v_form),
-            '제외': np.array(record.v_excluded),
-            '필수': np.array(record.v_required)
+            'type': np.array(record.v_type),
+            'category': np.array(record.v_category),
+            'speaker': np.array(record.v_speaker),
+            'listener': np.array(record.v_listener),
+            'Instruction': np.array(record.v_instruction),
+            'form': np.array(record.v_form),
+            'excluded': np.array(record.v_excluded),
+            'required': np.array(record.v_required)
         }
         
         db_records.append(original_record)
@@ -166,16 +166,16 @@ def get_top_similar_records(user_vector_record, db_vector_records, fields, top_n
 # ----------------- 추천 관련 함수 -----------------
 def recommend_keywords(user_record, top_records, fields):
     recommendations = {}
-    excluded_fields = ["타입", "카테고리"]
+    excluded_fields = ["type", "category"]
     
     for field in fields:
-        if field not in excluded_fields:  # 타입과 카테고리를 제외한 모든 필드에 대해 추천
+        if field not in excluded_fields:  # type과 category를 excluded한 모든 필드에 대해 추천
             freq = defaultdict(int)
             for record in top_records:
                 if record.get(field):
                     freq[record[field]] += 1
             
-            # 사용자의 현재 키워드를 제외하고 정렬
+            # 사용자의 현재 키워드를 excluded하고 정렬
             current_keyword = user_record.get(field, '')
             sorted_candidates = sorted(
                 [(kw, count) for kw, count in freq.items() if kw != current_keyword],
@@ -192,7 +192,7 @@ def recommend_keywords(user_record, top_records, fields):
 
 # ----------------- 전체 실행 함수 -----------------
 def process_user_record(user_record, update_db=True):
-    fields = ["타입", "카테고리", "화자", "청자", "지시", "형식", "제외", "필수"]
+    fields = ["type", "category", "speaker", "listener", "instruction", "form", "excluded", "required"]
     
     try:
         # 1. 기존 DB와 벡터 DB 로드
@@ -267,7 +267,7 @@ def process_user_record(user_record, update_db=True):
         
         # 9. 추천 후보 키워드 추출
         recommendations = recommend_keywords(user_record, top_similar_records, fields)
-        
+
         # 10. 사용자 기록 삭제
         if update_db:
             latest_record = block_history_log_pca_tb.objects.latest('id')

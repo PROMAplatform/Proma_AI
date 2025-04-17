@@ -2,6 +2,8 @@ from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+import json
+import llm.utils
 from .vector_utils import process_user_record, compute_keyword_embeddings, create_embedding_pipeline, compute_pca_transform, save_to_pca_tb
 from .serializers import (
     BlockRecommendRequestSerializer,
@@ -16,6 +18,7 @@ def block_recommend(request):
     try:
         # 요청 데이터 검증
         request_serializer = BlockRecommendRequestSerializer(data=request.data)
+        category = BlockRecommendRequestSerializer(data=request.data.get('category'))
         if not request_serializer.is_valid():
             return Response(
                 {"status": "error", "message": request_serializer.errors},
@@ -29,43 +32,66 @@ def block_recommend(request):
         all_recommendations = {
             field: values
             for field, values in result["recommendations"].items()
-            if field not in ["타입", "카테고리"]
+            if field not in ["type", "category"]
         }
-        
+
+        history = []
+        for key, value in all_recommendations.items():
+            history.append({"type": f"{key}: {value}"})
+        answer = llm.utils.llm_answer_block_history("task/research", str(category), history, "ko")
+
+
+
+        print(answer)
+        data = json.loads(answer)
+        formatted_data = [
+            {
+                "blockCategory": item['blockCategory'],
+                "blockValue": item['blockValue'],
+                "blockDescription": item['blockDescription']
+            }
+            for item in data
+        ]
+
+        return Response({
+            "responseDto": {
+                'selectBlock': formatted_data
+            }
+        })
         # 응답 데이터 구성
-        response_data = {
-            "status": "success",
-            "similar_records": [
-                {
-                    "record": {
-                        field: str(value) if value is not None else ''
-                        for field, value in record.items()
-                    },
-                    "similarity_score": float(1 - dist)  # 거리를 유사도 점수로 변환 (0~1 사이)
-                }
-                for record, dist in zip(
-                    [r["record"] for r in result["similar_records"]], 
-                    [r["distance"] for r in result["similar_records"]]
-                )
-            ],
-            "recommendations": all_recommendations  # 딕셔너리 형태 유지
-        }
-        
-        # 응답 데이터 검증
-        response_serializer = BlockRecommendResponseSerializer(data=response_data)
-        if not response_serializer.is_valid():
-            print(f"Serializer errors: {response_serializer.errors}")  # 디버깅용 로그
-            return Response(
-                {
-                    "status": "error", 
-                    "message": "Invalid response format",
-                    "details": response_serializer.errors
-                },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-        
-        return Response(response_serializer.validated_data, status=status.HTTP_200_OK)
-        
+        # response_data = {
+        #     "status": "success",
+        #     "similar_records": [
+        #         {
+        #             "record": {
+        #                 field: str(value) if value is not None else ''
+        #                 for field, value in record.items()
+        #             },
+        #             "similarity_score": float(1 - dist)  # 거리를 유사도 점수로 변환 (0~1 사이)
+        #         }
+        #         for record, dist in zip(
+        #             [r["record"] for r in result["similar_records"]],
+        #             [r["distance"] for r in result["similar_records"]]
+        #         )
+        #     ],
+        #     "recommendations": all_recommendations  # 딕셔너리 형태 유지
+        # }
+        #
+        # # 응답 데이터 검증
+        # response_serializer = BlockRecommendResponseSerializer(data=response_data)
+        # if not response_serializer.is_valid():
+        #     print(f"Serializer errors: {response_serializer.errors}")  # 디버깅용 로그
+        #     return Response(
+        #         {
+        #             "status": "error",
+        #             "message": "Invalid response format",
+        #             "details": response_serializer.errors
+        #         },
+        #         status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        #     )
+        #
+        # return Response(response_serializer.validated_data, status=status.HTTP_200_OK)
+
     except Exception as e:
         print(f"Error in block_recommend: {str(e)}")  # 디버깅용 로그
         return Response(
@@ -85,8 +111,8 @@ def save_block(request):
             )
         
         user_record = request_serializer.validated_data
-        fields = ["타입", "카테고리", "화자", "청자", "지시", "형식", "제외", "필수"]
-        
+        fields = ["type", "category", "speaker", "listener", "instruction", "form", "excluded", "required"]
+
         # 키워드 추출
         keywords = set()
         for field in fields:
