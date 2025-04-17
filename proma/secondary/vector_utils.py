@@ -23,8 +23,20 @@ def get_embedding(keyword, feature_extractor):
     embedding = np.mean(output[0], axis=0)
     return embedding
 
-def compute_keyword_embeddings(keywords, feature_extractor):
-    return {kw: get_embedding(kw, feature_extractor) for kw in keywords if kw and kw.strip()}
+def compute_keyword_embeddings(keywords, feature_extractor, existing_embeddings=None):
+    if existing_embeddings is None:
+        existing_embeddings = {}
+    
+    # 새로운 키워드에 대해서만 임베딩 계산
+    new_embeddings = {}
+    for kw in keywords:
+        if kw and kw.strip():
+            if kw in existing_embeddings:
+                new_embeddings[kw] = existing_embeddings[kw]
+            else:
+                new_embeddings[kw] = get_embedding(kw, feature_extractor)
+    
+    return new_embeddings
 
 def compute_pca_transform(embeddings_matrix, n_components=3):
     pca = PCA(n_components=n_components)
@@ -185,32 +197,53 @@ def process_user_record(user_record, update_db=True):
     try:
         # 1. 기존 DB와 벡터 DB 로드
         db_records, db_vector_records = load_from_pca_tb()
-        keyword_embeddings = load_from_embed_tb()
+        existing_embeddings = load_from_embed_tb()
         
-        # 2. 벡터 DB가 없거나 임베딩이 없는 경우 초기화
-        if not db_vector_records or not keyword_embeddings:
+        # 2. 사용자 입력의 키워드 확인
+        user_keywords = set()
+        for field in fields:
+            if user_record.get(field) and user_record[field].strip():
+                user_keywords.add(user_record[field])
+        
+        # 3. 새로운 키워드가 있는지 확인
+        has_new_keywords = False
+        if existing_embeddings:
+            has_new_keywords = any(kw not in existing_embeddings for kw in user_keywords)
+        else:
+            has_new_keywords = True
+        
+        if has_new_keywords:
+            # 4-A. 새로운 키워드가 있는 경우: 전체 임베딩 및 PCA 재계산
             all_keywords = get_all_keywords(db_records or [], user_record, fields)
             feature_extractor = create_embedding_pipeline()
-            keyword_embeddings = compute_keyword_embeddings(all_keywords, feature_extractor)
+            keyword_embeddings = compute_keyword_embeddings(all_keywords, feature_extractor, existing_embeddings)
             embeddings_matrix = np.array(list(keyword_embeddings.values()))
             pca, _ = compute_pca_transform(embeddings_matrix)
-            keyword_to_vector_func = create_keyword_to_vector_func(keyword_embeddings, pca)
-            db_vector_records = [record_to_vector(record, fields, keyword_to_vector_func) 
-                               for record in (db_records or [])]
-            save_to_embed_tb(keyword_embeddings)
             
-            # 기존 레코드가 있다면 PCA 테이블에 저장
-            if db_records:
-                for record, vector_record in zip(db_records, db_vector_records):
-                    save_to_pca_tb(record, vector_record)
+            # 벡터 DB 업데이트
+            if not existing_embeddings or set(keyword_embeddings.keys()) != set(existing_embeddings.keys()):
+                save_to_embed_tb(keyword_embeddings)
+                
+            if not db_vector_records:
+                keyword_to_vector_func = create_keyword_to_vector_func(keyword_embeddings, pca)
+                db_vector_records = [record_to_vector(record, fields, keyword_to_vector_func) 
+                                   for record in (db_records or [])]
+                
+                if db_records:
+                    for record, vector_record in zip(db_records, db_vector_records):
+                        save_to_pca_tb(record, vector_record)
+        else:
+            # 4-B. 새로운 키워드가 없는 경우: 기존 임베딩과 PCA 사용
+            keyword_embeddings = existing_embeddings
+            embeddings_matrix = np.array(list(keyword_embeddings.values()))
+            pca, _ = compute_pca_transform(embeddings_matrix)
         
-        # 3. 사용자 기록 벡터화
+        # 5. 사용자 기록 벡터화
         keyword_to_vector_func = create_keyword_to_vector_func(keyword_embeddings, pca)
         user_vector_record = record_to_vector(user_record, fields, keyword_to_vector_func)
         
-        # 4. 임시로 사용자 기록을 DB에 추가
+        # 6. 임시로 사용자 기록을 DB에 추가
         if update_db:
-            # numpy array를 list로 변환하여 저장
             vector_record_for_db = {}
             for field in fields:
                 vec = user_vector_record.get(field)
@@ -224,28 +257,28 @@ def process_user_record(user_record, update_db=True):
             
             save_to_pca_tb(user_record, vector_record_for_db)
             
-        # 5. 업데이트된 DB 다시 로드
-        db_records, db_vector_records = load_from_pca_tb()
+        # 7. 업데이트된 DB 다시 로드 (새로운 키워드가 있는 경우에만)
+        if has_new_keywords:
+            db_records, db_vector_records = load_from_pca_tb()
         
-        # 6. 유사도 계산
+        # 8. 유사도 계산
         top_indices, similarity_scores = get_top_similar_records(user_vector_record, db_vector_records, fields)
         top_similar_records = [db_records[idx] for idx in top_indices]
         
-        # 7. 추천 후보 키워드 추출
+        # 9. 추천 후보 키워드 추출
         recommendations = recommend_keywords(user_record, top_similar_records, fields)
         
-        # 8. 사용자 기록 삭제
+        # 10. 사용자 기록 삭제
         if update_db:
-            # 가장 최근에 추가된 레코드 삭제 (사용자 기록)
             latest_record = block_history_log_pca_tb.objects.latest('id')
             latest_record.delete()
         
-        # 9. 결과 반환
+        # 11. 결과 반환
         return {
             'similar_records': [
                 {
                     'record': record,
-                    'distance': float(dist)  # numpy.float64를 파이썬 float로 변환
+                    'distance': float(dist)
                 }
                 for record, (_, dist) in zip(top_similar_records, similarity_scores)
             ],
