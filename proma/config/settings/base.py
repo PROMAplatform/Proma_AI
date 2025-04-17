@@ -49,12 +49,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'users',
     'llm',
-    'corsheaders',
-    'api'
+   # 'corsheaders',
+    'api',
+    'secondary'
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
+    #'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -97,13 +98,28 @@ DATABASES = {
         'HOST': get_env_variable("DB_HOST"),
         'PORT': get_env_variable("DB_PORT"),
         'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             'charset': 'utf8mb4',
             'use_unicode': True,
         }
+    },
+    'secondary': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': get_env_variable("PG_NAME"),
+        'USER': get_env_variable("PG_USER"),
+        'PASSWORD': get_env_variable("DB_PASSWORD"),
+        'HOST': get_env_variable("PG_HOST"),
+        'PORT': get_env_variable("PG_PORT"),
+        # 'OPTIONS': {
+        #     'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        #     'charset': 'utf8mb4',
+        #     'use_unicode': True,
+        # }
     }
 }
 
-CORS_ORIGIN_ALLOW_ALL = True
+DATABASE_ROUTERS = ['config.settings.db_router.MultiDBRouter']
+#CORS_ORIGIN_ALLOW_ALL = True
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
