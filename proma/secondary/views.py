@@ -38,11 +38,10 @@ def block_recommend(request):
         history = []
         for key, value in all_recommendations.items():
             history.append({"type": f"{key}: {value}"})
+        print("이게 바로 llm 들어가기전 마지막 모습입니다. : " + str(history))
         answer = llm.utils.llm_answer_block_history("task/research", str(category), history, "ko")
 
 
-
-        print(answer)
         data = json.loads(answer)
         formatted_data = [
             {
