@@ -57,15 +57,21 @@ def record_to_vector(record, fields, keyword_to_vector_func):
 
 # ----------------- DB 관련 함수 -----------------
 def save_to_embed_tb(keyword_embeddings):
-    # 기존 임베딩 삭제
-    block_history_log_embed_tb.objects.all().delete()
-    
-    # 새 임베딩 저장
+    # 각 키워드에 대해 개별적으로 처리
     for keyword, embedding in keyword_embeddings.items():
-        # numpy array를 리스트로 변환하여 저장
-        block_history_log_embed_tb.objects.create(
-            keyword=embedding.tolist() if hasattr(embedding, 'tolist') else embedding
-        )
+        # 기존 임베딩이 있는지 확인
+        existing_embed = block_history_log_embed_tb.objects.filter(keyword_text=keyword).first()
+        
+        if existing_embed:
+            # 기존 임베딩 업데이트
+            existing_embed.keyword_embedding = embedding.tolist() if hasattr(embedding, 'tolist') else embedding
+            existing_embed.save()
+        else:
+            # 새 임베딩 생성
+            block_history_log_embed_tb.objects.create(
+                keyword_text=keyword,
+                keyword_embedding=embedding.tolist() if hasattr(embedding, 'tolist') else embedding
+            )
 
 def save_to_pca_tb(record, vector_record):
     # 벡터와 원본 값을 함께 저장
@@ -96,7 +102,7 @@ def load_from_embed_tb():
     keyword_embeddings = {}
     for embed in embeddings:
         # VectorField에서 가져온 값을 numpy 배열로 변환
-        keyword_embeddings[str(embed.id)] = np.array(embed.keyword)
+        keyword_embeddings[embed.keyword_text] = np.array(embed.keyword_embedding)
     return keyword_embeddings
 
 def load_from_pca_tb():
@@ -205,10 +211,11 @@ def process_user_record(user_record, update_db=True):
             if user_record.get(field) and user_record[field].strip():
                 user_keywords.add(user_record[field])
         
-        # 3. 새로운 키워드가 있는지 확인
+        # 3. 새로운 키워드가 있는지 확인 - 텍스트 기반으로 비교
         has_new_keywords = False
         if existing_embeddings:
             has_new_keywords = any(kw not in existing_embeddings for kw in user_keywords)
+            print(f"has_new_keywords: {has_new_keywords}")
         else:
             has_new_keywords = True
         

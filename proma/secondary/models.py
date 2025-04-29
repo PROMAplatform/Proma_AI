@@ -25,7 +25,8 @@ class block_history_log_pca_tb(models.Model):
 # Create your models here.
 class block_history_log_embed_tb(models.Model):
     id = models.AutoField(primary_key=True)
-    keyword = VectorField(dimensions=1024)
+    keyword_text = models.CharField(max_length=255)  # 원본 키워드 텍스트
+    keyword_embedding = VectorField(dimensions=1024)  # 키워드의 임베딩 벡터
     class Meta:
         app_label = 'secondary'  # 라우터가 이 앱을 secondary로 라우팅하도록 설정
         db_table = "block_history_log_embed_tb"  # 실제 PostgreSQL 테이블 이름
