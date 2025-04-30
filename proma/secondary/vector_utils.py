@@ -4,6 +4,7 @@ from sklearn.decomposition import PCA
 from collections import defaultdict
 from .models import block_history_log_embed_tb, block_history_log_pca_tb
 import json
+from datetime import datetime
 
 
 # ----------------- 임베딩 및 벡터 매핑 관련 함수 -----------------
@@ -229,6 +230,8 @@ def process_user_record(user_record, update_db=True):
     fields = ["type", "category", "speaker", "listener", "instruction", "form", "excluded", "required"]
 
     try:
+        start_time = datetime.now()
+        print(f"[process_user_record] 실행 시각: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
         # 1. 기존 DB와 벡터 DB 로드
         db_records, db_vector_records = load_from_pca_tb()
         existing_embeddings = load_from_embed_tb() or {}
@@ -311,6 +314,9 @@ def process_user_record(user_record, update_db=True):
             latest_record.delete()
 
         # 12. 결과 반환
+        end_time = datetime.now()
+        elapsed = (end_time - start_time).total_seconds()
+        print(f"[process_user_record] 총 소요 시간: {elapsed:.3f}초")
         return {
             'similar_records': [
                 {
