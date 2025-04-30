@@ -5,6 +5,7 @@ from collections import defaultdict
 from .models import block_history_log_embed_tb, block_history_log_pca_tb
 import json
 
+
 # ----------------- 임베딩 및 벡터 매핑 관련 함수 -----------------
 def get_all_keywords(db_records, user_record, fields):
     keywords_set = set()
@@ -15,18 +16,21 @@ def get_all_keywords(db_records, user_record, fields):
                 keywords_set.add(value)
     return list(keywords_set)
 
+
 def create_embedding_pipeline(model_name="nlpai-lab/KoE5"):
     return pipeline("feature-extraction", model=model_name, tokenizer=model_name)
+
 
 def get_embedding(keyword, feature_extractor):
     output = feature_extractor(keyword, truncation=True)
     embedding = np.mean(output[0], axis=0)
     return embedding
 
+
 def compute_keyword_embeddings(keywords, feature_extractor, existing_embeddings=None):
     if existing_embeddings is None:
         existing_embeddings = {}
-    
+
     # 새로운 키워드에 대해서만 임베딩 계산
     new_embeddings = {}
     for kw in keywords:
@@ -35,13 +39,15 @@ def compute_keyword_embeddings(keywords, feature_extractor, existing_embeddings=
                 new_embeddings[kw] = existing_embeddings[kw]
             else:
                 new_embeddings[kw] = get_embedding(kw, feature_extractor)
-    
+
     return new_embeddings
+
 
 def compute_pca_transform(embeddings_matrix, n_components=3):
     pca = PCA(n_components=n_components)
     transformed = pca.fit_transform(embeddings_matrix)
     return pca, transformed
+
 
 def keyword_to_vector(keyword, keyword_embeddings, pca):
     if keyword not in keyword_embeddings:
@@ -49,11 +55,14 @@ def keyword_to_vector(keyword, keyword_embeddings, pca):
     emb = keyword_embeddings[keyword]
     return pca.transform([emb])[0]
 
+
 def create_keyword_to_vector_func(keyword_embeddings, pca):
     return lambda kw: keyword_to_vector(kw, keyword_embeddings, pca) if kw and kw.strip() else None
 
+
 def record_to_vector(record, fields, keyword_to_vector_func):
     return {field: keyword_to_vector_func(record.get(field)) for field in fields}
+
 
 # ----------------- DB 관련 함수 -----------------
 def save_to_embed_tb(keyword_embeddings):
@@ -61,7 +70,7 @@ def save_to_embed_tb(keyword_embeddings):
     for keyword, embedding in keyword_embeddings.items():
         # 기존 임베딩이 있는지 확인
         existing_embed = block_history_log_embed_tb.objects.filter(keyword_text=keyword).first()
-        
+
         if existing_embed:
             # 기존 임베딩 업데이트
             existing_embed.keyword_embedding = embedding.tolist() if hasattr(embedding, 'tolist') else embedding
@@ -73,17 +82,29 @@ def save_to_embed_tb(keyword_embeddings):
                 keyword_embedding=embedding.tolist() if hasattr(embedding, 'tolist') else embedding
             )
 
+
 def save_to_pca_tb(record, vector_record):
     # 벡터와 원본 값을 함께 저장
     block_history_log_pca_tb.objects.create(
-        v_type=vector_record.get('type', [0, 0, 0]).tolist() if hasattr(vector_record.get('type', [0, 0, 0]), 'tolist') else vector_record.get('type', [0, 0, 0]),
-        v_category=vector_record.get('category', [0, 0, 0]).tolist() if hasattr(vector_record.get('category', [0, 0, 0]), 'tolist') else vector_record.get('category', [0, 0, 0]),
-        v_speaker=vector_record.get('speaker', [0, 0, 0]).tolist() if hasattr(vector_record.get('speaker', [0, 0, 0]), 'tolist') else vector_record.get('speaker', [0, 0, 0]),
-        v_listener=vector_record.get('listener', [0, 0, 0]).tolist() if hasattr(vector_record.get('listener', [0, 0, 0]), 'tolist') else vector_record.get('listener', [0, 0, 0]),
-        v_instruction=vector_record.get('instruction', [0, 0, 0]).tolist() if hasattr(vector_record.get('Instruction', [0, 0, 0]), 'tolist') else vector_record.get('Instruction', [0, 0, 0]),
-        v_form=vector_record.get('form', [0, 0, 0]).tolist() if hasattr(vector_record.get('form', [0, 0, 0]), 'tolist') else vector_record.get('form', [0, 0, 0]),
-        v_excluded=vector_record.get('excluded', [0, 0, 0]).tolist() if hasattr(vector_record.get('excluded', [0, 0, 0]), 'tolist') else vector_record.get('excluded', [0, 0, 0]),
-        v_required=vector_record.get('required', [0, 0, 0]).tolist() if hasattr(vector_record.get('required', [0, 0, 0]), 'tolist') else vector_record.get('required', [0, 0, 0]),
+        v_type=vector_record.get('type', [0, 0, 0]).tolist() if hasattr(vector_record.get('type', [0, 0, 0]),
+                                                                        'tolist') else vector_record.get('type',
+                                                                                                         [0, 0, 0]),
+        v_category=vector_record.get('category', [0, 0, 0]).tolist() if hasattr(
+            vector_record.get('category', [0, 0, 0]), 'tolist') else vector_record.get('category', [0, 0, 0]),
+        v_speaker=vector_record.get('speaker', [0, 0, 0]).tolist() if hasattr(vector_record.get('speaker', [0, 0, 0]),
+                                                                              'tolist') else vector_record.get(
+            'speaker', [0, 0, 0]),
+        v_listener=vector_record.get('listener', [0, 0, 0]).tolist() if hasattr(
+            vector_record.get('listener', [0, 0, 0]), 'tolist') else vector_record.get('listener', [0, 0, 0]),
+        v_instruction=vector_record.get('instruction', [0, 0, 0]).tolist() if hasattr(
+            vector_record.get('Instruction', [0, 0, 0]), 'tolist') else vector_record.get('Instruction', [0, 0, 0]),
+        v_form=vector_record.get('form', [0, 0, 0]).tolist() if hasattr(vector_record.get('form', [0, 0, 0]),
+                                                                        'tolist') else vector_record.get('form',
+                                                                                                         [0, 0, 0]),
+        v_excluded=vector_record.get('excluded', [0, 0, 0]).tolist() if hasattr(
+            vector_record.get('excluded', [0, 0, 0]), 'tolist') else vector_record.get('excluded', [0, 0, 0]),
+        v_required=vector_record.get('required', [0, 0, 0]).tolist() if hasattr(
+            vector_record.get('required', [0, 0, 0]), 'tolist') else vector_record.get('required', [0, 0, 0]),
         o_type=record.get('type', ''),
         o_category=record.get('category', ''),
         o_speaker=record.get('speaker', ''),
@@ -94,25 +115,27 @@ def save_to_pca_tb(record, vector_record):
         o_required=record.get('required', '')
     )
 
+
 def load_from_embed_tb():
     embeddings = block_history_log_embed_tb.objects.all()
     if not embeddings.exists():
         return None
-    
+
     keyword_embeddings = {}
     for embed in embeddings:
         # VectorField에서 가져온 값을 numpy 배열로 변환
         keyword_embeddings[embed.keyword_text] = np.array(embed.keyword_embedding)
     return keyword_embeddings
 
+
 def load_from_pca_tb():
     records = block_history_log_pca_tb.objects.all()
     if not records.exists():
         return [], []
-    
+
     db_records = []
     db_vector_records = []
-    
+
     for record in records:
         # 원본 레코드 구성
         original_record = {
@@ -125,7 +148,7 @@ def load_from_pca_tb():
             'excluded': record.o_excluded,
             'required': record.o_required
         }
-        
+
         # 벡터 레코드 구성 - VectorField에서 가져온 값을 numpy 배열로 변환
         vector_record = {
             'type': np.array(record.v_type),
@@ -137,11 +160,12 @@ def load_from_pca_tb():
             'excluded': np.array(record.v_excluded),
             'required': np.array(record.v_required)
         }
-        
+
         db_records.append(original_record)
         db_vector_records.append(vector_record)
-    
+
     return db_records, db_vector_records
+
 
 # ----------------- 유사도 비교 관련 함수 -----------------
 def compute_similarity(user_vector, db_vector, fields):
@@ -149,38 +173,41 @@ def compute_similarity(user_vector, db_vector, fields):
     for field in fields:
         if user_vector.get(field) is not None and db_vector.get(field) is not None:
             # 벡터를 numpy 배열로 변환
-            user_vec = np.array(user_vector[field]) if not isinstance(user_vector[field], np.ndarray) else user_vector[field]
+            user_vec = np.array(user_vector[field]) if not isinstance(user_vector[field], np.ndarray) else user_vector[
+                field]
             db_vec = np.array(db_vector[field]) if not isinstance(db_vector[field], np.ndarray) else db_vector[field]
-            
+
             # 벡터가 1차원이 아닌 경우 1차원으로 변환
             if user_vec.ndim > 1:
                 user_vec = user_vec.flatten()
             if db_vec.ndim > 1:
                 db_vec = db_vec.flatten()
-                
+
             d = float(np.linalg.norm(user_vec - db_vec))
             distances.append(d)
     return float(np.mean(distances)) if distances else float('inf')
 
+
 def get_top_similar_records(user_vector_record, db_vector_records, fields, top_n=5):
-    similarity_scores = [(idx, compute_similarity(user_vector_record, db_vector, fields)) 
+    similarity_scores = [(idx, compute_similarity(user_vector_record, db_vector, fields))
                          for idx, db_vector in enumerate(db_vector_records)]
     similarity_scores.sort(key=lambda x: x[1])
     top_indices = [idx for idx, dist in similarity_scores[:top_n]]
     return top_indices, similarity_scores[:top_n]
 
+
 # ----------------- 추천 관련 함수 -----------------
 def recommend_keywords(user_record, top_records, fields):
     recommendations = {}
     excluded_fields = ["type", "category"]
-    
+
     for field in fields:
         if field not in excluded_fields:  # type과 category를 excluded한 모든 필드에 대해 추천
             freq = defaultdict(int)
             for record in top_records:
                 if record.get(field):
                     freq[record[field]] += 1
-            
+
             # 사용자의 현재 키워드를 excluded하고 정렬
             current_keyword = user_record.get(field, '')
             sorted_candidates = sorted(
@@ -188,37 +215,37 @@ def recommend_keywords(user_record, top_records, fields):
                 key=lambda x: x[1],
                 reverse=True
             )
-            
+
             if sorted_candidates:
                 recommendations[field] = [kw for kw, count in sorted_candidates]
             else:
                 recommendations[field] = []
-    
+
     return recommendations
+
 
 # ----------------- 전체 실행 함수 -----------------
 def process_user_record(user_record, update_db=True):
     fields = ["type", "category", "speaker", "listener", "instruction", "form", "excluded", "required"]
-    
+
     try:
         # 1. 기존 DB와 벡터 DB 로드
         db_records, db_vector_records = load_from_pca_tb()
         existing_embeddings = load_from_embed_tb()
-        
+
         # 2. 사용자 입력의 키워드 확인
         user_keywords = set()
         for field in fields:
             if user_record.get(field) and user_record[field].strip():
                 user_keywords.add(user_record[field])
-        
+
         # 3. 새로운 키워드가 있는지 확인 - 텍스트 기반으로 비교
         has_new_keywords = False
         if existing_embeddings:
             has_new_keywords = any(kw not in existing_embeddings for kw in user_keywords)
-            print(f"has_new_keywords: {has_new_keywords}")
         else:
             has_new_keywords = True
-        
+
         if has_new_keywords:
             # 4-A. 새로운 키워드가 있는 경우: 전체 임베딩 및 PCA 재계산
             all_keywords = get_all_keywords(db_records or [], user_record, fields)
@@ -226,16 +253,16 @@ def process_user_record(user_record, update_db=True):
             keyword_embeddings = compute_keyword_embeddings(all_keywords, feature_extractor, existing_embeddings)
             embeddings_matrix = np.array(list(keyword_embeddings.values()))
             pca, _ = compute_pca_transform(embeddings_matrix)
-            
+
             # 벡터 DB 업데이트
             if not existing_embeddings or set(keyword_embeddings.keys()) != set(existing_embeddings.keys()):
                 save_to_embed_tb(keyword_embeddings)
-                
+
             if not db_vector_records:
                 keyword_to_vector_func = create_keyword_to_vector_func(keyword_embeddings, pca)
-                db_vector_records = [record_to_vector(record, fields, keyword_to_vector_func) 
-                                   for record in (db_records or [])]
-                
+                db_vector_records = [record_to_vector(record, fields, keyword_to_vector_func)
+                                     for record in (db_records or [])]
+
                 if db_records:
                     for record, vector_record in zip(db_records, db_vector_records):
                         save_to_pca_tb(record, vector_record)
@@ -244,11 +271,11 @@ def process_user_record(user_record, update_db=True):
             keyword_embeddings = existing_embeddings
             embeddings_matrix = np.array(list(keyword_embeddings.values()))
             pca, _ = compute_pca_transform(embeddings_matrix)
-        
+
         # 5. 사용자 기록 벡터화
         keyword_to_vector_func = create_keyword_to_vector_func(keyword_embeddings, pca)
         user_vector_record = record_to_vector(user_record, fields, keyword_to_vector_func)
-        
+
         # 6. 임시로 사용자 기록을 DB에 추가
         if update_db:
             vector_record_for_db = {}
@@ -261,17 +288,17 @@ def process_user_record(user_record, update_db=True):
                         vector_record_for_db[field] = list(vec)
                 else:
                     vector_record_for_db[field] = [0, 0, 0]
-            
+
             save_to_pca_tb(user_record, vector_record_for_db)
-            
+
         # 7. 업데이트된 DB 다시 로드 (새로운 키워드가 있는 경우에만)
         if has_new_keywords:
             db_records, db_vector_records = load_from_pca_tb()
-        
+
         # 8. 유사도 계산
         top_indices, similarity_scores = get_top_similar_records(user_vector_record, db_vector_records, fields)
         top_similar_records = [db_records[idx] for idx in top_indices]
-        
+
         # 9. 추천 후보 키워드 추출
         recommendations = recommend_keywords(user_record, top_similar_records, fields)
 
@@ -279,7 +306,7 @@ def process_user_record(user_record, update_db=True):
         if update_db:
             latest_record = block_history_log_pca_tb.objects.latest('id')
             latest_record.delete()
-        
+
         # 11. 결과 반환
         return {
             'similar_records': [

@@ -17,24 +17,26 @@ All you have to do is write a one-word Title that matches the prompt_method and 
 But now I have to print out the output form in a list in the form of Title and description. It doesn't have to be json in a comfortable form so that I can parse this, and I just want it to be in the form of a key value
 
 And also, I want you to make it in Speaker, Listener, Instruction, Form, Required, and Excluded specifications. When I recommend it, I need to make it so that I can make a single prompt in a bundle
-For example, [{]
+
+Print 25 blocks each inside the curly brackets in the example, but the blockValue and blockDescription is creative according to the category without any overlap.You can think of blockValue as a single word that summarizes blockDescription.
+, please exclude all the markdown characters!!! 
+
+For example, [{
 	      "blockCategory": "Speaker",
 	      "blockValue": "Sir",
 	      "blockDescription": "You are a frighteningly useful teacher."
       },
       {
-	      "blockCategory": "Speaker",
+	      "blockCategory": "Listener",
 	      "blockValue": "Sir",
 	      "blockDescription": "You are a frighteningly useful teacher."
       },
       {
-	      "blockCategory": "Speaker",
+	      "blockCategory": "Instruction",
 	      "blockValue": "Sir",
 	      "blockDescription": "You are a frighteningly useful teacher."
       }] Make 5 for each standard except for everything like the new-line and reverse-slash symbols so that you can hand them over to json right away in this format!!!  
 
-Print 25 blocks each inside the curly brackets in the example, but the blockValue and blockDescription is creative according to the category without any overlap.You can think of blockValue as a single word that summarizes blockDescription.
-, please exclude all the markdown characters!!! 
 """
 korean_template = """
 !!! Answer only in Korean!!!

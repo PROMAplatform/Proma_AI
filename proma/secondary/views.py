@@ -4,12 +4,62 @@ from rest_framework.response import Response
 from rest_framework import status
 import json
 import llm.utils
+from llm.multimodal.recommendRag import llm_answer_block_history_rag, get_o_fields_list
+from .models import block_history_log_pca_tb
 from .vector_utils import process_user_record, compute_keyword_embeddings, create_embedding_pipeline, compute_pca_transform, save_to_pca_tb
 from .serializers import (
     BlockRecommendRequestSerializer,
     BlockRecommendResponseSerializer
 )
 import numpy as np
+
+@api_view(['POST'])
+def rag_block_recommend(request):
+    try:
+        request_serializer = BlockRecommendRequestSerializer(data=request.data)
+        category = BlockRecommendRequestSerializer(data=request.data.get('category'))
+        method = BlockRecommendResponseSerializer(data=request.data.get('type'))
+
+        if not request_serializer.is_valid():
+            return Response(
+                {"status": "error", "message": request_serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        fields_list = get_o_fields_list(block_history_log_pca_tb)
+        queryset = block_history_log_pca_tb.objects.values(*fields_list)
+        history = []
+        for row in queryset:
+            for key, value in row.items():
+                history.append({"type": f"{key}: {value}"})
+        answer = llm_answer_block_history_rag(str(method), str(category), "ko", history)
+
+        #print(answer)
+
+        data = json.loads(answer)
+
+        formatted_data = [
+            {
+                "blockCategory": item['blockCategory'],
+                "blockValue": item['blockValue'],
+                "blockDescription": item['blockDescription']
+            }
+            for item in data
+        ]
+
+        return Response({
+            "responseDto": {
+                'selectBlock': formatted_data
+            }
+        })
+
+    except Exception as e:
+        print(f"Error in block_recommend: {str(e)}")  # 디버깅용 로그
+        return Response(
+            {"status": "error", "message": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
 
 # Create your views here.
 
@@ -41,8 +91,9 @@ def block_recommend(request):
         print("이게 바로 llm 들어가기전 마지막 모습입니다. : " + str(history))
         answer = llm.utils.llm_answer_block_history("task/research", str(category), history, "ko")
 
-
+        #print(answer)
         data = json.loads(answer)
+
         formatted_data = [
             {
                 "blockCategory": item['blockCategory'],
@@ -57,39 +108,6 @@ def block_recommend(request):
                 'selectBlock': formatted_data
             }
         })
-        # 응답 데이터 구성
-        # response_data = {
-        #     "status": "success",
-        #     "similar_records": [
-        #         {
-        #             "record": {
-        #                 field: str(value) if value is not None else ''
-        #                 for field, value in record.items()
-        #             },
-        #             "similarity_score": float(1 - dist)  # 거리를 유사도 점수로 변환 (0~1 사이)
-        #         }
-        #         for record, dist in zip(
-        #             [r["record"] for r in result["similar_records"]],
-        #             [r["distance"] for r in result["similar_records"]]
-        #         )
-        #     ],
-        #     "recommendations": all_recommendations  # 딕셔너리 형태 유지
-        # }
-        #
-        # # 응답 데이터 검증
-        # response_serializer = BlockRecommendResponseSerializer(data=response_data)
-        # if not response_serializer.is_valid():
-        #     print(f"Serializer errors: {response_serializer.errors}")  # 디버깅용 로그
-        #     return Response(
-        #         {
-        #             "status": "error",
-        #             "message": "Invalid response format",
-        #             "details": response_serializer.errors
-        #         },
-        #         status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        #     )
-        #
-        # return Response(response_serializer.validated_data, status=status.HTTP_200_OK)
 
     except Exception as e:
         print(f"Error in block_recommend: {str(e)}")  # 디버깅용 로그
@@ -170,3 +188,31 @@ def save_block(request):
             {"status": "error", "message": str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+def parse_blocks(text):
+    lines = [line.strip() for line in text.split('\n') if line.strip()]
+    result = []
+    current_category = None
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        # 카테고리(블록)명일 경우
+        if not line.startswith('Title:') and not line.startswith('Description:'):
+            current_category = line
+            i += 1
+            continue
+        # Title/Description 쌍 파싱
+        if line.startswith('Title:'):
+            title = line.replace('Title:', '').strip()
+            # 다음 줄이 Description인지 확인
+            if i+1 < len(lines) and lines[i+1].startswith('Description:'):
+                description = lines[i+1].replace('Description:', '').strip()
+                result.append({
+                    "blockCategory": current_category,
+                    "blockValue": title,
+                    "blockDescription": description
+                })
+                i += 2
+                continue
+        i += 1
+    return result
