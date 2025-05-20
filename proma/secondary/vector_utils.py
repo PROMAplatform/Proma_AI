@@ -272,15 +272,23 @@ def process_user_record(user_record, update_db=True):
             keyword_embeddings = {kw: existing_embeddings[kw] for kw in all_keywords}
             embeddings_matrix = np.array([keyword_embeddings[kw] for kw in all_keywords])
             pca, _ = compute_pca_transform(embeddings_matrix)
+            # 6. 사용자 기록 벡터화
+            keyword_to_vector_func = create_keyword_to_vector_func(keyword_embeddings, pca)
+            user_vector_record = record_to_vector(user_record, fields, keyword_to_vector_func)
         else:
-            # 새로운 키워드가 없으면 기존 임베딩 DB와 PCA DB를 그대로 사용
-            keyword_embeddings = existing_embeddings
-            embeddings_matrix = np.array(list(keyword_embeddings.values()))
-            pca, _ = compute_pca_transform(embeddings_matrix)
-
-        # 6. 사용자 기록 벡터화
-        keyword_to_vector_func = create_keyword_to_vector_func(keyword_embeddings, pca)
-        user_vector_record = record_to_vector(user_record, fields, keyword_to_vector_func)
+            # 새로운 키워드가 없으면 기존 PCA DB의 벡터만 사용 (PCA fit 제거)
+            # user_record의 각 필드 값이 db_records에 존재하면 해당 벡터를, 없으면 [0,0,0] 사용
+            user_vector_record = {}
+            for field in fields:
+                user_value = user_record.get(field)
+                found = False
+                for rec, vec in zip(db_records, db_vector_records):
+                    if rec.get(field) == user_value:
+                        user_vector_record[field] = vec.get(field, [0,0,0])
+                        found = True
+                        break
+                if not found:
+                    user_vector_record[field] = [0,0,0]
 
         # 7. 임시로 사용자 기록을 DB에 추가
         if update_db:
@@ -316,6 +324,7 @@ def process_user_record(user_record, update_db=True):
         # 12. 결과 반환
         end_time = datetime.now()
         elapsed = (end_time - start_time).total_seconds()
+        print(f"[process_user_record] 추천 결과: {json.dumps(recommendations, ensure_ascii=False, indent=2)}")
         print(f"[process_user_record] 총 소요 시간: {elapsed:.3f}초")
         return {
             'similar_records': [
