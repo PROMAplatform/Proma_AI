@@ -247,48 +247,70 @@ def process_user_record(user_record, update_db=True):
         print(existing_keywords)
 
         # 3. 새로운 키워드만 추출
-        new_keywords = user_keywords - existing_keywords
+        #new_keywords = user_keywords - existing_keywords
         
-        print(new_keywords)
+        #print(new_keywords)
 
-        if new_keywords:
+        #if new_keywords:
             # 4. 새로운 키워드만 임베딩 생성 및 DB 저장
-            feature_extractor = create_embedding_pipeline()
-            new_keyword_embeddings = compute_keyword_embeddings(list(new_keywords), feature_extractor)
-            save_to_embed_tb(new_keyword_embeddings)
+            #feature_extractor = create_embedding_pipeline()
+            #new_keyword_embeddings = compute_keyword_embeddings(list(new_keywords), feature_extractor)
+            #save_to_embed_tb(new_keyword_embeddings)
             # 기존 임베딩 dict에 추가
-            existing_embeddings.update(new_keyword_embeddings)
+            #existing_embeddings.update(new_keyword_embeddings)
 
             # 5. 모든 키워드 임베딩으로 PCA 진행
-            all_keywords = get_all_keywords(db_records or [], user_record, fields)
+            #all_keywords = get_all_keywords(db_records or [], user_record, fields)
             # (혹시 DB에 없는 키워드가 있으면 임베딩 추가)
-            missing_keywords = set(all_keywords) - set(existing_embeddings.keys())
-            if missing_keywords:
-                feature_extractor = create_embedding_pipeline()
-                missing_embeddings = compute_keyword_embeddings(list(missing_keywords), feature_extractor)
-                save_to_embed_tb(missing_embeddings)
-                existing_embeddings.update(missing_embeddings)
+            #missing_keywords = set(all_keywords) - set(existing_embeddings.keys())
+            #if missing_keywords:
+                #feature_extractor = create_embedding_pipeline()
+                #missing_embeddings = compute_keyword_embeddings(list(missing_keywords), feature_extractor)
+                #save_to_embed_tb(missing_embeddings)
+                #existing_embeddings.update(missing_embeddings)
 
-            keyword_embeddings = {kw: existing_embeddings[kw] for kw in all_keywords}
-            embeddings_matrix = np.array([keyword_embeddings[kw] for kw in all_keywords])
-            pca, _ = compute_pca_transform(embeddings_matrix)
+            #keyword_embeddings = {kw: existing_embeddings[kw] for kw in all_keywords}
+            #embeddings_matrix = np.array([keyword_embeddings[kw] for kw in all_keywords])
+            #pca, _ = compute_pca_transform(embeddings_matrix)
             # 6. 사용자 기록 벡터화
-            keyword_to_vector_func = create_keyword_to_vector_func(keyword_embeddings, pca)
-            user_vector_record = record_to_vector(user_record, fields, keyword_to_vector_func)
-        else:
+            #keyword_to_vector_func = create_keyword_to_vector_func(keyword_embeddings, pca)
+            #user_vector_record = record_to_vector(user_record, fields, keyword_to_vector_func)
+        #else:
             # 새로운 키워드가 없으면 기존 PCA DB의 벡터만 사용 (PCA fit 제거)
             # user_record의 각 필드 값이 db_records에 존재하면 해당 벡터를, 없으면 [0,0,0] 사용
-            user_vector_record = {}
-            for field in fields:
-                user_value = user_record.get(field)
-                found = False
-                for rec, vec in zip(db_records, db_vector_records):
-                    if rec.get(field) == user_value:
-                        user_vector_record[field] = vec.get(field, [0,0,0])
-                        found = True
-                        break
-                if not found:
-                    user_vector_record[field] = [0,0,0]
+            #user_vector_record = {}
+            #for field in fields:
+                #user_value = user_record.get(field)
+                #found = False
+                #for rec, vec in zip(db_records, db_vector_records):
+                    #if rec.get(field) == user_value:
+                        #user_vector_record[field] = vec.get(field, [0,0,0])
+                        #found = True
+                        #break
+                #if not found:
+                    #user_vector_record[field] = [0,0,0]
+
+        # === 기존 임베딩 DB + 사용자 기록 임베딩을 합쳐 PCA를 fit하는 코드 ===
+        # 1. 기존 임베딩 DB에서 모든 임베딩을 불러옴
+        all_keywords = get_all_keywords(db_records or [], user_record, fields)
+        feature_extractor = create_embedding_pipeline()
+        # 2. 사용자 기록의 각 필드 값(키워드)을 임베딩(DB에 없으면 임시로 임베딩)
+        keyword_embeddings = existing_embeddings.copy()
+        for field in fields:
+            user_kw = user_record.get(field)
+            if user_kw and user_kw.strip() and user_kw not in keyword_embeddings:
+                keyword_embeddings[user_kw] = get_embedding(user_kw, feature_extractor)
+        # 3. PCA fit을 위해 기존 임베딩 + 사용자 임베딩 모두 사용
+        pca_keywords = list(keyword_embeddings.keys())
+        embeddings_matrix = np.array([keyword_embeddings[kw] for kw in pca_keywords])
+        pca, transformed_matrix = compute_pca_transform(embeddings_matrix)
+        # 4. 각 키워드별 PCA 벡터 매핑
+        keyword_pca_vectors = {kw: vec for kw, vec in zip(pca_keywords, transformed_matrix)}
+        # 5. 기존 DB 레코드와 사용자 레코드 모두 PCA로 변환
+        def get_vector_record(record):
+            return {field: keyword_pca_vectors.get(record.get(field), [0,0,0]) for field in fields}
+        db_vector_records_pca = [get_vector_record(rec) for rec in db_records]
+        user_vector_record = get_vector_record(user_record)
 
         # 7. 임시로 사용자 기록을 DB에 추가
         if update_db:
@@ -306,11 +328,12 @@ def process_user_record(user_record, update_db=True):
             save_to_pca_tb(user_record, vector_record_for_db)
 
         # 8. 업데이트된 DB 다시 로드 (새로운 키워드가 있는 경우에만)
-        if new_keywords:
-            db_records, db_vector_records = load_from_pca_tb()
+        #if new_keywords:
+            #db_records, db_vector_records = load_from_pca_tb()
 
         # 9. 유사도 계산
-        top_indices, similarity_scores = get_top_similar_records(user_vector_record, db_vector_records, fields)
+        #top_indices, similarity_scores = get_top_similar_records(user_vector_record, db_vector_records, fields)
+        top_indices, similarity_scores = get_top_similar_records(user_vector_record, db_vector_records_pca, fields)
         top_similar_records = [db_records[idx] for idx in top_indices]
 
         # 10. 추천 후보 키워드 추출
