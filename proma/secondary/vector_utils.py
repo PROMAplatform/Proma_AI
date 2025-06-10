@@ -122,7 +122,7 @@ def save_to_pca_tb(record, vector_record):
         v_listener=vector_record.get('listener', [0, 0, 0]).tolist() if hasattr(
             vector_record.get('listener', [0, 0, 0]), 'tolist') else vector_record.get('listener', [0, 0, 0]),
         v_instruction=vector_record.get('instruction', [0, 0, 0]).tolist() if hasattr(
-            vector_record.get('Instruction', [0, 0, 0]), 'tolist') else vector_record.get('Instruction', [0, 0, 0]),
+            vector_record.get('instruction', [0, 0, 0]), 'tolist') else vector_record.get('instruction', [0, 0, 0]),
         v_form=vector_record.get('form', [0, 0, 0]).tolist() if hasattr(vector_record.get('form', [0, 0, 0]),
                                                                         'tolist') else vector_record.get('form',
                                                                                                          [0, 0, 0]),
@@ -134,7 +134,7 @@ def save_to_pca_tb(record, vector_record):
         o_category=record.get('category', ''),
         o_speaker=record.get('speaker', ''),
         o_listener=record.get('listener', ''),
-        o_instruction=record.get('Instruction', ''),
+        o_instruction=record.get('instruction', ''),
         o_form=record.get('form', ''),
         o_excluded=record.get('excluded', ''),
         o_required=record.get('required', '')
@@ -168,7 +168,7 @@ def load_from_pca_tb():
             'category': record.o_category,
             'speaker': record.o_speaker,
             'listener': record.o_listener,
-            'Instruction': record.o_instruction,
+            'instruction': record.o_instruction,
             'form': record.o_form,
             'excluded': record.o_excluded,
             'required': record.o_required
@@ -180,7 +180,7 @@ def load_from_pca_tb():
             'category': np.array(record.v_category),
             'speaker': np.array(record.v_speaker),
             'listener': np.array(record.v_listener),
-            'Instruction': np.array(record.v_instruction),
+            'instruction': np.array(record.v_instruction),
             'form': np.array(record.v_form),
             'excluded': np.array(record.v_excluded),
             'required': np.array(record.v_required)
@@ -222,9 +222,19 @@ def get_top_similar_records(user_vector_record, db_vector_records, fields, top_n
 
 
 # ----------------- 추천 관련 함수 -----------------
-def recommend_keywords(user_record, top_records, fields):
+def recommend_keywords(user_record, top_records, fields, target_count=5):
     recommendations = {}
     excluded_fields = ["type", "category"]
+
+    # 전체 DB에서 각 필드별 키워드 빈도 계산 (부족한 경우 보완용)
+    db_records, _ = load_from_pca_tb()
+    global_freq = {}
+    for field in fields:
+        if field not in excluded_fields:
+            global_freq[field] = defaultdict(int)
+            for record in db_records:
+                if record.get(field):
+                    global_freq[field][record[field]] += 1
 
     for field in fields:
         if field not in excluded_fields:  # type과 category를 excluded한 모든 필드에 대해 추천
@@ -241,10 +251,26 @@ def recommend_keywords(user_record, top_records, fields):
                 reverse=True
             )
 
-            if sorted_candidates:
-                recommendations[field] = [kw for kw, count in sorted_candidates]
-            else:
-                recommendations[field] = []
+            # 상위 키워드들 선택
+            top_keywords = [kw for kw, count in sorted_candidates]
+            
+            # 부족한 경우 전체 DB에서 추가 키워드 보충
+            if len(top_keywords) < target_count:
+                # 이미 선택된 키워드와 현재 사용자 키워드를 제외한 전체 DB 키워드
+                already_selected = set(top_keywords + [current_keyword])
+                global_sorted = sorted(
+                    [(kw, count) for kw, count in global_freq[field].items() 
+                     if kw not in already_selected and kw.strip()],
+                    key=lambda x: x[1],
+                    reverse=True
+                )
+                
+                # 부족한 만큼 추가
+                additional_keywords = [kw for kw, count in global_sorted[:target_count - len(top_keywords)]]
+                top_keywords.extend(additional_keywords)
+            
+            # 정확히 target_count 개수만 반환 (5개 초과인 경우 상위 5개만)
+            recommendations[field] = top_keywords[:target_count]
 
     return recommendations
 
