@@ -226,16 +226,6 @@ def recommend_keywords(user_record, top_records, fields, target_count=5):
     recommendations = {}
     excluded_fields = ["type", "category"]
 
-    # 전체 DB에서 각 필드별 키워드 빈도 계산 (부족한 경우 보완용)
-    db_records, _ = load_from_pca_tb()
-    global_freq = {}
-    for field in fields:
-        if field not in excluded_fields:
-            global_freq[field] = defaultdict(int)
-            for record in db_records:
-                if record.get(field):
-                    global_freq[field][record[field]] += 1
-
     for field in fields:
         if field not in excluded_fields:  # type과 category를 excluded한 모든 필드에 대해 추천
             freq = defaultdict(int)
@@ -254,12 +244,19 @@ def recommend_keywords(user_record, top_records, fields, target_count=5):
             # 상위 키워드들 선택
             top_keywords = [kw for kw, count in sorted_candidates]
             
-            # 부족한 경우 전체 DB에서 추가 키워드 보충
+            # 부족한 경우에만 전체 DB에서 추가 키워드 보충
             if len(top_keywords) < target_count:
+                # 전체 DB에서 해당 필드의 키워드 빈도 계산
+                db_records, _ = load_from_pca_tb()
+                global_freq = defaultdict(int)
+                for record in db_records:
+                    if record.get(field):
+                        global_freq[record[field]] += 1
+                
                 # 이미 선택된 키워드와 현재 사용자 키워드를 제외한 전체 DB 키워드
                 already_selected = set(top_keywords + [current_keyword])
                 global_sorted = sorted(
-                    [(kw, count) for kw, count in global_freq[field].items() 
+                    [(kw, count) for kw, count in global_freq.items() 
                      if kw not in already_selected and kw.strip()],
                     key=lambda x: x[1],
                     reverse=True
