@@ -7,13 +7,22 @@ import json
 from datetime import datetime
 
 """
-=== 유사도 비교 방식 ===
+=== 향상된 유사도 비교 프로세스 ===
 
-코사인 유사도 (Cosine Similarity) 사용
+1. 필터링 단계: type과 category가 동일한 레코드들로 먼저 필터링
+2. 유사도 계산: 필터링된 레코드들에 대해 코사인 유사도 계산
+3. 키워드 추천: 동일한 type/category 내에서 추천 키워드 제공
+
+코사인 유사도 (Cosine Similarity) 사용:
 - 벡터의 크기보다는 방향성(의미)에 집중
 - 텍스트 임베딩에 가장 적합
 - 정규화 효과가 있어 안정적
 - 범위: 0~2 (낮을수록 유사함)
+
+장점:
+- 관련성 높은 레코드들끼리만 비교하여 추천 품질 향상
+- type과 category 맥락 내에서 일관된 추천 제공
+- 불필요한 계산 감소로 성능 최적화
 """
 
 
@@ -253,12 +262,14 @@ def compute_similarity(user_vector, db_vector, fields):
     return float(np.mean(distances)) if distances else float('inf')
 
 
-def get_top_similar_records(user_vector_record, db_vector_records, fields, top_n=5):
+def get_top_similar_records(user_record, user_vector_record, db_records, db_vector_records, fields, top_n=5):
     """
-    코사인 유사도를 사용하여 가장 유사한 레코드들을 찾는 함수
+    type과 category가 동일한 레코드들을 먼저 필터링한 후 코사인 유사도로 가장 유사한 레코드들을 찾는 함수
     
     Args:
+        user_record: 사용자 원본 레코드 (type, category 필터링용)
         user_vector_record: 사용자 벡터 레코드
+        db_records: DB 원본 레코드들
         db_vector_records: DB 벡터 레코드들
         fields: 비교할 필드 리스트
         top_n: 반환할 상위 레코드 수
@@ -266,26 +277,61 @@ def get_top_similar_records(user_vector_record, db_vector_records, fields, top_n
     Returns:
         tuple: (상위 인덱스 리스트, 유사도 점수 리스트)
     """
-    similarity_scores = [(idx, compute_similarity(user_vector_record, db_vector, fields))
-                         for idx, db_vector in enumerate(db_vector_records)]
+    user_type = user_record.get('type', '')
+    user_category = user_record.get('category', '')
+    
+    # 1. type과 category가 동일한 레코드들로 필터링
+    filtered_indices = []
+    for idx, db_record in enumerate(db_records):
+        if (db_record.get('type', '') == user_type and 
+            db_record.get('category', '') == user_category):
+            filtered_indices.append(idx)
+    
+    print(f"[필터링] type='{user_type}', category='{user_category}'로 필터링")
+    print(f"[필터링] 전체 {len(db_records)}개 중 {len(filtered_indices)}개 레코드가 매칭됨")
+    
+    # 2. 필터링된 레코드가 없는 경우 전체 레코드에서 유사도 계산
+    if not filtered_indices:
+        print(f"[필터링] 매칭되는 레코드가 없어 전체 DB에서 유사도 계산")
+        similarity_scores = [(idx, compute_similarity(user_vector_record, db_vector, fields))
+                             for idx, db_vector in enumerate(db_vector_records)]
+    else:
+        # 3. 필터링된 레코드들에 대해서만 유사도 계산
+        similarity_scores = [(idx, compute_similarity(user_vector_record, db_vector_records[idx], fields))
+                             for idx in filtered_indices]
+    
+    # 4. 거리 기준으로 정렬 (낮을수록 유사함)
     similarity_scores.sort(key=lambda x: x[1])
+    
+    # 5. 상위 N개 선택
     top_indices = [idx for idx, dist in similarity_scores[:top_n]]
+    
+    print(f"[유사도] 상위 {len(top_indices)}개 레코드 선택됨")
+    for i, (idx, dist) in enumerate(similarity_scores[:top_n]):
+        print(f"[유사도] {i+1}위: 레코드 {idx}, 거리={dist:.4f}")
+    
     return top_indices, similarity_scores[:top_n]
 
 
 # ----------------- 추천 관련 함수 -----------------
 def recommend_keywords(user_record, top_records, fields, target_count=5):
+    """
+    유사한 레코드들로부터 키워드를 추천하는 함수
+    부족한 경우 동일한 type과 category를 가진 전체 DB 레코드에서 보충
+    """
     recommendations = {}
     excluded_fields = ["type", "category"]
+    user_type = user_record.get('type', '')
+    user_category = user_record.get('category', '')
 
     for field in fields:
-        if field not in excluded_fields:  # type과 category를 excluded한 모든 필드에 대해 추천
+        if field not in excluded_fields:  # type과 category를 제외한 모든 필드에 대해 추천
             freq = defaultdict(int)
             for record in top_records:
                 if record.get(field):
                     freq[record[field]] += 1
 
-            # 사용자의 현재 키워드를 excluded하고 정렬
+            # 사용자의 현재 키워드를 제외하고 정렬
             current_keyword = user_record.get(field, '')
             sorted_candidates = sorted(
                 [(kw, count) for kw, count in freq.items() if kw != current_keyword],
@@ -296,16 +342,24 @@ def recommend_keywords(user_record, top_records, fields, target_count=5):
             # 상위 키워드들 선택
             top_keywords = [kw for kw, count in sorted_candidates]
             
-            # 부족한 경우에만 전체 DB에서 추가 키워드 보충
+            # 부족한 경우에만 동일한 type/category를 가진 전체 DB에서 추가 키워드 보충
             if len(top_keywords) < target_count:
-                # 전체 DB에서 해당 필드의 키워드 빈도 계산
+                # 동일한 type과 category를 가진 전체 DB 레코드에서 해당 필드의 키워드 빈도 계산
                 db_records, _ = load_from_pca_tb()
                 global_freq = defaultdict(int)
-                for record in db_records:
-                    if record.get(field):
-                        global_freq[record[field]] += 1
+                same_type_category_count = 0
                 
-                # 이미 선택된 키워드와 현재 사용자 키워드를 제외한 전체 DB 키워드
+                for record in db_records:
+                    # type과 category가 동일한 레코드만 고려
+                    if (record.get('type', '') == user_type and 
+                        record.get('category', '') == user_category and 
+                        record.get(field)):
+                        global_freq[record[field]] += 1
+                        same_type_category_count += 1
+                
+                print(f"[추천] {field} 필드: 동일한 type/category를 가진 {same_type_category_count}개 레코드에서 보충")
+                
+                # 이미 선택된 키워드와 현재 사용자 키워드를 제외한 키워드들
                 already_selected = set(top_keywords + [current_keyword])
                 global_sorted = sorted(
                     [(kw, count) for kw, count in global_freq.items() 
@@ -317,6 +371,8 @@ def recommend_keywords(user_record, top_records, fields, target_count=5):
                 # 부족한 만큼 추가
                 additional_keywords = [kw for kw, count in global_sorted[:target_count - len(top_keywords)]]
                 top_keywords.extend(additional_keywords)
+                
+                print(f"[추천] {field} 필드: {len(additional_keywords)}개 키워드 추가 보충")
             
             # 정확히 target_count 개수만 반환 (5개 초과인 경우 상위 5개만)
             recommendations[field] = top_keywords[:target_count]
@@ -419,8 +475,8 @@ def process_user_record(user_record, update_db=True):
         if new_keywords:
             db_records, db_vector_records = load_from_pca_tb()
 
-        # 9. 유사도 계산
-        top_indices, similarity_scores = get_top_similar_records(user_vector_record, db_vector_records, fields)
+        # 9. 유사도 계산 (type과 category로 먼저 필터링 후 비교)
+        top_indices, similarity_scores = get_top_similar_records(user_record, user_vector_record, db_records, db_vector_records, fields)
         #top_indices, similarity_scores = get_top_similar_records(user_vector_record, db_vector_records_pca, fields)
         top_similar_records = [db_records[idx] for idx in top_indices]
 
