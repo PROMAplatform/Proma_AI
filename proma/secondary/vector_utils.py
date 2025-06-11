@@ -6,6 +6,16 @@ from .models import block_history_log_embed_tb, block_history_log_pca_tb
 import json
 from datetime import datetime
 
+"""
+=== 유사도 비교 방식 ===
+
+코사인 유사도 (Cosine Similarity) 사용
+- 벡터의 크기보다는 방향성(의미)에 집중
+- 텍스트 임베딩에 가장 적합
+- 정규화 효과가 있어 안정적
+- 범위: 0~2 (낮을수록 유사함)
+"""
+
 
 # ----------------- 임베딩 및 벡터 매핑 관련 함수 -----------------
 def get_all_keywords(db_records, user_record, fields):
@@ -193,13 +203,41 @@ def load_from_pca_tb():
 
 
 # ----------------- 유사도 비교 관련 함수 -----------------
+def cosine_similarity(vec1, vec2):
+    """코사인 유사도 계산 (높을수록 유사함, 0~1 범위)"""
+    dot_product = np.dot(vec1, vec2)
+    norm1 = np.linalg.norm(vec1)
+    norm2 = np.linalg.norm(vec2)
+    
+    if norm1 == 0 or norm2 == 0:
+        return 0.0
+    
+    return dot_product / (norm1 * norm2)
+
+
+def cosine_distance(vec1, vec2):
+    """코사인 거리 계산 (낮을수록 유사함, 0~2 범위)"""
+    return 1 - cosine_similarity(vec1, vec2)
+
+
 def compute_similarity(user_vector, db_vector, fields):
+    """
+    코사인 유사도를 사용한 벡터간 유사도 계산
+    
+    Args:
+        user_vector: 사용자 벡터 딕셔너리
+        db_vector: DB 벡터 딕셔너리
+        fields: 비교할 필드 리스트
+    
+    Returns:
+        float: 유사도 점수 (낮을수록 유사함)
+    """
     distances = []
+    
     for field in fields:
         if user_vector.get(field) is not None and db_vector.get(field) is not None:
             # 벡터를 numpy 배열로 변환
-            user_vec = np.array(user_vector[field]) if not isinstance(user_vector[field], np.ndarray) else user_vector[
-                field]
+            user_vec = np.array(user_vector[field]) if not isinstance(user_vector[field], np.ndarray) else user_vector[field]
             db_vec = np.array(db_vector[field]) if not isinstance(db_vector[field], np.ndarray) else db_vector[field]
 
             # 벡터가 1차원이 아닌 경우 1차원으로 변환
@@ -208,12 +246,26 @@ def compute_similarity(user_vector, db_vector, fields):
             if db_vec.ndim > 1:
                 db_vec = db_vec.flatten()
 
-            d = float(np.linalg.norm(user_vec - db_vec))
+            # 코사인 거리 계산
+            d = float(cosine_distance(user_vec, db_vec))
             distances.append(d)
+    
     return float(np.mean(distances)) if distances else float('inf')
 
 
 def get_top_similar_records(user_vector_record, db_vector_records, fields, top_n=5):
+    """
+    코사인 유사도를 사용하여 가장 유사한 레코드들을 찾는 함수
+    
+    Args:
+        user_vector_record: 사용자 벡터 레코드
+        db_vector_records: DB 벡터 레코드들
+        fields: 비교할 필드 리스트
+        top_n: 반환할 상위 레코드 수
+    
+    Returns:
+        tuple: (상위 인덱스 리스트, 유사도 점수 리스트)
+    """
     similarity_scores = [(idx, compute_similarity(user_vector_record, db_vector, fields))
                          for idx, db_vector in enumerate(db_vector_records)]
     similarity_scores.sort(key=lambda x: x[1])
@@ -274,6 +326,17 @@ def recommend_keywords(user_record, top_records, fields, target_count=5):
 
 # ----------------- 전체 실행 함수 -----------------
 def process_user_record(user_record, update_db=True):
+    """
+    사용자 레코드를 처리하여 유사한 레코드를 찾고 키워드를 추천하는 함수
+    코사인 유사도를 사용하여 벡터 간 유사도를 계산합니다.
+    
+    Args:
+        user_record: 사용자 입력 레코드
+        update_db: DB 업데이트 여부 (기본값: True)
+    
+    Returns:
+        dict: 유사한 레코드들과 추천 키워드 딕셔너리
+    """
     fields = ["type", "category", "speaker", "listener", "instruction", "form", "excluded", "required"]
 
     try:
