@@ -4,6 +4,9 @@ from rest_framework.response import Response
 from rest_framework import status
 import json
 import llm.utils
+from llm.evalues2 import evaluate_rag_simple
+from llm.multimodal.evalues3 import evaluate_rag_simple_bert
+from llm.multimodal.evalus import evaluate_rag_performance
 from llm.multimodal.recommendRag import llm_answer_block_history_rag, get_o_fields_list
 from .models import block_history_log_pca_tb
 from .vector_utils import process_user_record, compute_keyword_embeddings, create_embedding_pipeline, compute_pca_transform, save_to_pca_tb
@@ -12,6 +15,11 @@ from .serializers import (
     BlockRecommendResponseSerializer
 )
 import numpy as np
+from langchain_core.documents import Document
+from datetime import datetime
+from collections import namedtuple
+from .vector_utils_2 import process_user_record_anyway2
+
 
 @api_view(['POST'])
 def rag_block_recommend(request):
@@ -25,17 +33,49 @@ def rag_block_recommend(request):
                 {"status": "error", "message": request_serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        fields_list = get_o_fields_list(block_history_log_pca_tb)
-        queryset = block_history_log_pca_tb.objects.values(*fields_list)
-        history = []
-        for row in queryset:
-            for key, value in row.items():
-                history.append({"type": f"{key}: {value}"})
-        answer = llm_answer_block_history_rag(str(method), str(category), "ko", history)
+        # else:
+        #     user_inputs = request_serializer.validated_data
+        #     answer = llm_answer_block_history_rag(
+        #         str(method), str(category), language, user_inputs,
+        #     )
 
-        #print(answer)
+        fields = ["speaker", "listener", "instruction", "form", "excluded", "required"]
+
+        answer = llm_answer_block_history_rag(str(method), str(category), "ko", request_serializer.validated_data)
+
+        print(answer)
 
         data = json.loads(answer)
+
+        Document1 = namedtuple('Document', ['page_content'])
+        history= []
+
+        if isinstance(data, dict):
+            # 딕셔너리 구조: {"blockCategory": [...], "blockValue": [...]}
+            block_categories = data.get('blockCategory', [])
+            block_values = data.get('blockValue', [])
+            for key, value in zip(block_categories, block_values):
+                doc = Document1(page_content=f"o_{key}:{value}")
+                history.append(doc)
+        elif isinstance(data, list):
+            # 리스트 구조: [{"blockCategory": ..., "blockValue": ...}, ...]
+            for item in data:
+                block_category = item.get('blockCategory')
+                block_value = item.get('blockValue')
+                doc = Document1(page_content=f"o_{block_category}:{block_value}")
+                history.append(doc)
+        else:
+            raise ValueError("answer의 JSON 구조를 확인하세요.")
+
+        print(history)
+
+        query_fields = {
+            k: v for k, v in request_serializer.validated_data.items()
+            if k not in ['type', 'category'] and v.strip()
+        }
+
+        evaluate_rag_simple_bert(query_fields, history)
+
 
         formatted_data = [
             {
@@ -86,13 +126,55 @@ def block_recommend(request):
         }
 
         history = []
+        for key, values in all_recommendations.items():
+            for value in values:
+                doc = Document(
+                    page_content=f"o_{key}:{value}"
+                )
+                history.append(doc)
+        print(history)
+        print("asdlkfjasdlkfjasklfjalskfjlksa")
+        history2 = []
         for key, value in all_recommendations.items():
-            history.append({"type": f"{key}: {value}"})
-        print("이게 바로 llm 들어가기전 마지막 모습입니다. : " + str(history))
-        answer = llm.utils.llm_answer_block_history("task/research", str(category), history, "ko")
+            history2.append({"type": f"{key}: {value}"})
+
+        print("\n" + "🔍 벡터 검색 결과 평가 시작" + "\n")
+        query_fields = {
+            k: v for k, v in request_serializer.validated_data.items()
+            if k not in ['type', 'category'] and v.strip()
+        }
+
+        evaluation_results = evaluate_rag_simple_bert(query_fields, history)
+
+        answer = llm.utils.llm_answer_block_history("task/research", str(category), history2, "ko")
 
         #print(answer)
         data = json.loads(answer)
+
+        Document1 = namedtuple('Document', ['page_content'])
+
+        Document1 = namedtuple('Document', ['page_content'])
+        history= []
+
+        if isinstance(data, dict):
+            # 딕셔너리 구조: {"blockCategory": [...], "blockValue": [...]}
+            block_categories = data.get('blockCategory', [])
+            block_values = data.get('blockValue', [])
+            for key, value in zip(block_categories, block_values):
+                doc = Document1(page_content=f"o_{key}:{value}")
+                history.append(doc)
+        elif isinstance(data, list):
+            # 리스트 구조: [{"blockCategory": ..., "blockValue": ...}, ...]
+            for item in data:
+                block_category = item.get('blockCategory')
+                block_value = item.get('blockValue')
+                doc = Document1(page_content=f"o_{block_category}:{block_value}")
+                history.append(doc)
+        else:
+            raise ValueError("answer의 JSON 구조를 확인하세요.")
+
+        print(history)
+        evaluate_rag_simple_bert(query_fields, history)
 
         formatted_data = [
             {
@@ -102,6 +184,7 @@ def block_recommend(request):
             }
             for item in data
         ]
+
 
         return Response({
             "responseDto": {
